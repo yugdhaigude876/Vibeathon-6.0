@@ -180,7 +180,7 @@ export function CartSheet() {
                 <div className="flex-1 min-w-0">
                   <h4 className="font-semibold text-sm text-zinc-100 truncate">{item.name}</h4>
                   <p className="text-xs text-amber-400 font-medium">
-                    ${Number(item.price || 0).toFixed(2)} each
+                    ₹{Number(item.price || 0).toFixed(2)} each
                   </p>
                 </div>
 
@@ -210,7 +210,7 @@ export function CartSheet() {
                 {/* Item Total & Remove Button */}
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-bold text-zinc-100 w-14 text-right">
-                    ${(Number(item.price || 0) * quantity).toFixed(2)}
+                    ₹{(Number(item.price || 0) * quantity).toFixed(2)}
                   </span>
                   <Button
                     variant="ghost"
@@ -246,15 +246,15 @@ export function CartSheet() {
             <div className="space-y-2 pt-2 border-t border-zinc-800/80 text-sm">
               <div className="flex justify-between text-zinc-400 text-xs">
                 <span>Subtotal</span>
-                <span>${subtotal.toFixed(2)}</span>
+                <span>₹{subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-zinc-400 text-xs">
-                <span>Tax (8.5%)</span>
-                <span>${tax.toFixed(2)}</span>
+                <span>Tax (5%)</span>
+                <span>₹{tax.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-zinc-100 font-bold text-base pt-2 border-t border-zinc-800">
                 <span>Total</span>
-                <span className="text-amber-400">${totalAmount.toFixed(2)}</span>
+                <span className="text-amber-400">₹{totalAmount.toFixed(2)}</span>
               </div>
             </div>
 

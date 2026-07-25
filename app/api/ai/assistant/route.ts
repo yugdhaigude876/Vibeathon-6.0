@@ -89,7 +89,7 @@ export async function POST(request: Request) {
 
   const menuContext = menuItems
     .slice(0, 12)
-    .map((item) => `${item.name} — $${Number(item.price ?? 0).toFixed(2)} | ${item.category ?? 'General'} | ${item.description ?? 'Available today'}`)
+    .map((item) => `${item.name} — ₹${Number(item.price ?? 0).toFixed(2)} | ${item.category ?? 'General'} | ${item.description ?? 'Available today'}`)
     .join('\n')
 
   const managerContext = ordersSummary || 'No manager data available.'

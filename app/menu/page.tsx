@@ -249,7 +249,7 @@ export default function MenuPage() {
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredItems.map((item) => {
             const cartQty = cart[item.id]?.quantity || 0
-            const formattedPrice = `$${Number(item.price || 0).toFixed(2)}`
+            const formattedPrice = `₹${Number(item.price || 0).toFixed(2)}`
 
             return (
               <Card

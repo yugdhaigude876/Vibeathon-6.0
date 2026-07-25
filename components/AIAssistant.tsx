@@ -24,7 +24,7 @@ interface AIAssistantProps {
 }
 
 const customerSuggestions = [
-  'Recommend something spicy under $15',
+  'Recommend something spicy under ₹250',
   'What should I order if I am vegetarian?',
   'Suggest a shareable dish for two',
 ]
