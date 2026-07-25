@@ -108,23 +108,29 @@ export async function POST(request: Request) {
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
-    const result = await model.generateContent([
-      {
-        role: 'user',
-        parts: [{ text: `${systemContext}\n\nUser question: ${prompt}` }],
-      },
-    ])
+    
+    // Try gemini-1.5-flash first, fallback to gemini-pro if model unavailable
+    let text = ''
+    try {
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+      const result = await model.generateContent(`${systemContext}\n\nUser question: ${prompt}`)
+      text = await result.response.text()
+    } catch (modelError: any) {
+      console.warn('gemini-1.5-flash failed, trying gemini-2.0-flash:', modelError?.message || modelError)
+      const fallbackModel = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
+      const result = await fallbackModel.generateContent(`${systemContext}\n\nUser question: ${prompt}`)
+      text = await result.response.text()
+    }
 
-    const response = await result.response.text()
-    return NextResponse.json({ response })
-  } catch (error) {
-    console.error('Gemini request failed:', error)
+    return NextResponse.json({ response: text })
+  } catch (error: any) {
+    console.error('Gemini API call failed:', error?.message || error)
     return NextResponse.json({
       response: buildFallbackResponse(context, {
         menuItems: menuContext || 'No active items available.',
         managerSummary: managerContext,
       }),
+      debugError: String(error?.message || error)
     })
   }
 }
