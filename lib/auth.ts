@@ -1,0 +1,74 @@
+import type {
+  AuthError,
+  AuthTokenResponsePassword,
+  OAuthResponse,
+  PostgrestError,
+  User,
+} from '@supabase/supabase-js'
+
+import { createClient } from './supabase'
+
+export interface Profile {
+  id: string
+  email: string | null
+  full_name: string | null
+  avatar_url: string | null
+  role: string
+  created_at: string
+  updated_at: string
+}
+
+export async function signUp(
+  email: string,
+  password: string
+): Promise<{ user: User | null; error: AuthError | null }> {
+  const supabase = createClient()
+  const { data, error } = await supabase.auth.signUp({ email, password })
+  return { user: data.user, error }
+}
+
+export async function signIn(
+  email: string,
+  password: string
+): Promise<{
+  data: AuthTokenResponsePassword['data']
+  error: AuthError | null
+}> {
+  const supabase = createClient()
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+  return { data, error }
+}
+
+export async function signInWithGoogle(): Promise<{
+  data: OAuthResponse['data']
+  error: AuthError | null
+}> {
+  const supabase = createClient()
+  const { data, error } = await supabase.auth.signInWithOAuth({ provider: 'google' })
+  return { data, error }
+}
+
+export async function signOut(): Promise<void> {
+  const supabase = createClient()
+  await supabase.auth.signOut()
+}
+
+export async function getCurrentUser(): Promise<User | null> {
+  const supabase = createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  return user
+}
+
+export async function getUserProfile(
+  userId: string
+): Promise<{ profile: Profile | null; error: PostgrestError | null }> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .single()
+  return { profile: data, error }
+}
