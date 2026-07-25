@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Minus, Package, PackageAlert, Plus, RefreshCw } from 'lucide-react'
+import { Minus, Package, PackageCheck, Plus, RefreshCw } from 'lucide-react'
 
 import { createClient } from '@/lib/supabase'
 import { Alert } from '@/components/ui/alert'
@@ -154,7 +154,7 @@ export default function InventoryPage() {
 
         {lowStockItems.length > 0 ? (
           <Alert className="border-amber-500/20 bg-amber-500/10 text-amber-200">
-            <PackageAlert className="mr-2 inline h-4 w-4" />
+            <PackageCheck className="mr-2 inline h-4 w-4" />
             Low stock alert: {lowStockItems.map((item) => item.menu_items?.name).join(', ')}
           </Alert>
         ) : null}

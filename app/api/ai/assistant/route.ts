@@ -34,8 +34,8 @@ export async function POST(request: Request) {
     supabaseAnonKey
   )
 
-  let menuItems: Array<{ name: string; price?: number | null; category?: string | null; is_available?: boolean | null; description?: string | null }> = []
-  let inventoryItems: Array<{ stock_level?: number | null; reorder_level?: number | null; menu_items?: { name?: string | null } | null }> = []
+  let menuItems: Array<any> = []
+  let inventoryItems: Array<any> = []
   let ordersSummary = ''
 
   try {
@@ -49,14 +49,14 @@ export async function POST(request: Request) {
         .limit(20),
     ])
 
-    menuItems = (menuData ?? []).filter((item) => item.is_available !== false)
+    menuItems = (menuData ?? []).filter((item: any) => item.is_available !== false)
     inventoryItems = inventoryData ?? []
 
     const now = new Date()
     const start = new Date(now)
     start.setHours(0, 0, 0, 0)
 
-    const todaysOrders = (ordersData ?? []).filter((order) => {
+    const todaysOrders = (ordersData ?? []).filter((order: any) => {
       const createdAt = new Date(order.created_at)
       return createdAt >= start && createdAt <= now
     })
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     const itemCounts = new Map<string, number>()
     todaysOrders.forEach((order: any) => {
       order.order_items?.forEach((item: any) => {
-        const name = item.menu_items?.name ?? 'Unknown item'
+        const name = Array.isArray(item.menu_items) ? item.menu_items[0]?.name : item.menu_items?.name ?? 'Unknown item'
         itemCounts.set(name, (itemCounts.get(name) ?? 0) + (item.quantity ?? 1))
       })
     })
@@ -75,8 +75,11 @@ export async function POST(request: Request) {
       .map(([name, count]) => `${name} (${count})`)
 
     const lowStock = inventoryItems
-      .filter((item) => (item.stock_level ?? 0) <= (item.reorder_level ?? 0))
-      .map((item) => `${item.menu_items?.name ?? 'Item'} — stock ${item.stock_level ?? 0}`)
+      .filter((item: any) => (item.stock_level ?? 0) <= (item.reorder_level ?? 0))
+      .map((item: any) => {
+        const itemName = Array.isArray(item.menu_items) ? item.menu_items[0]?.name : item.menu_items?.name ?? 'Item'
+        return `${itemName} — stock ${item.stock_level ?? 0}`
+      })
 
     ordersSummary = [
       `Today’s order count: ${todaysOrders.length}`,
