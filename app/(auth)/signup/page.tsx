@@ -180,7 +180,7 @@ export default function SignupPage() {
             <Button
               type="button"
               variant="outline"
-              className="w-full h-11 flex items-center justify-center gap-2 border-slate-300 font-medium hover:bg-slate-50 dark:hover:bg-slate-900"
+              className="w-full h-11 flex items-center justify-center gap-2 border-slate-300 font-medium text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
               disabled={loading}
               onClick={handleGoogleSignUp}
             >
