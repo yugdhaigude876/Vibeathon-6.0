@@ -173,6 +173,26 @@ Create this table in Supabase (and turn on RLS so users can manage their own row
 
 ---
 
+---
+
+## Demo Accounts & Test Credentials
+
+For testing and demonstration during evaluation, use the following credentials on the **Staff & Manager** login tab:
+
+| Portal | Role | ID / Email | Password | Target Route |
+| --- | --- | --- | --- | --- |
+| **Manager Portal** | `manager` | `manager@platr.com` | `ManagerPass123!` | `/manager` |
+| **Staff Portal** | `staff` | `STF-1024` *(or `staff@platr.com`)* | `StaffPass123!` | `/staff` |
+| **Customer Portal** | `customer` | Google OAuth or Email Sign-in | *Self registered* | `/menu` |
+
+> **Note**: To create these test accounts in your Supabase project, insert them into `auth.users` and assign their respective roles (`manager` or `staff`) in the `profiles` table:
+> ```sql
+> UPDATE profiles SET role = 'manager' WHERE email = 'manager@platr.com';
+> UPDATE profiles SET role = 'staff' WHERE email = 'staff@platr.com';
+> ```
+
+---
+
 ## License
 
 MIT — see [LICENSE](./LICENSE).
@@ -182,3 +202,4 @@ MIT — see [LICENSE](./LICENSE).
 <p align="center">
   <sub>Built for Vibeathon 6.0</sub>
 </p>
+
