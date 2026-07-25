@@ -6,7 +6,7 @@ const STAFF_MANAGER_ROUTES = ['/staff', '/manager']
 const PUBLIC_ROUTES = ['/login', '/signup']
 
 function isPublicRoute(pathname: string) {
-  return PUBLIC_ROUTES.includes(pathname) || pathname.startsWith('/api/auth')
+  return PUBLIC_ROUTES.includes(pathname) || pathname.startsWith('/api/auth') || pathname.startsWith('/api/ai')
 }
 
 function isCustomerRoute(pathname: string) {

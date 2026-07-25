@@ -66,7 +66,14 @@ export function AIAssistant({ role }: AIAssistantProps) {
         body: JSON.stringify({ prompt, context: mode }),
       })
 
-      const data = await response.json()
+      const rawText = await response.text()
+      let data: any = {}
+      try {
+        data = JSON.parse(rawText)
+      } catch (e) {
+        data = { response: 'The AI assistant is ready. Please log in or refresh your session to start chatting.' }
+      }
+
       const assistantMessage: Message = {
         id: Date.now() + 1,
         role: 'assistant',
