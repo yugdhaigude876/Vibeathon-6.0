@@ -108,7 +108,17 @@ export default function SignupPage() {
       }
     }
 
-    toast({ title: 'Account created!', description: 'Please check your email for verification if prompted.' })
+    // Supabase returns session: null when email confirmation is required
+    if (user && !user.confirmed_at) {
+      setLoading(false)
+      toast({
+        title: 'Verification Email Sent!',
+        description: `We've sent a verification link to ${email}. Please check your inbox and verify your email before logging in.`,
+      })
+      return
+    }
+
+    toast({ title: 'Account created!', description: 'Redirecting to menu...' })
     setTimeout(() => router.push('/menu'), 1000)
   }
 
