@@ -46,7 +46,6 @@ interface Order {
   order_items?: OrderItem[] | null
 }
 
-const statusOrder: OrderStatus[] = ['pending', 'preparing', 'ready', 'completed']
 const visibleStatuses: OrderStatus[] = ['pending', 'preparing', 'ready']
 
 function formatElapsedTime(createdAt: string, now: number) {
