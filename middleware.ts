@@ -1,9 +1,55 @@
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+
+const CUSTOMER_ROUTES = ['/menu', '/orders', '/reservations', '/dashboard']
+const STAFF_MANAGER_ROUTES = ['/staff', '/manager']
+const PUBLIC_ROUTES = ['/login', '/signup']
+
+function isPublicRoute(pathname: string) {
+  return PUBLIC_ROUTES.includes(pathname) || pathname.startsWith('/api/auth')
+}
+
+function isCustomerRoute(pathname: string) {
+  return CUSTOMER_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))
+}
+
+function isStaffOrManagerRoute(pathname: string) {
+  return STAFF_MANAGER_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))
+}
+
+function getDefaultRedirect(role: string) {
+  return role === 'customer' ? '/menu' : '/dashboard'
+}
+
+async function getUserRole(
+  supabase: ReturnType<typeof createServerClient>,
+  user: { id: string; user_metadata?: Record<string, unknown> } | null
+) {
+  if (!user) return 'customer'
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (!error && data?.role) {
+    return String(data.role).toLowerCase()
+  }
+
+  const metadataRole = user.user_metadata?.role
+  if (typeof metadataRole === 'string' && metadataRole.trim()) {
+    return metadataRole.toLowerCase()
+  }
+
+  return 'customer'
+}
 
 export async function middleware(req: NextRequest) {
   let response = NextResponse.next({
-    request: req,
+    request: {
+      headers: req.headers,
+    },
   })
 
   const supabase = createServerClient(
@@ -14,14 +60,14 @@ export async function middleware(req: NextRequest) {
         getAll() {
           return req.cookies.getAll()
         },
-        setAll(cookiesToSet: Array<{ name: string; value: string; options?: any }>) {
+        setAll(cookiesToSet: Array<{ name: string; value: string; options?: CookieOptions }>) {
           cookiesToSet.forEach(({ name, value }) => req.cookies.set(name, value))
           response = NextResponse.next({
-            request: req,
+            request: {
+              headers: req.headers,
+            },
           })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          )
+          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
         },
       },
     }
@@ -32,25 +78,44 @@ export async function middleware(req: NextRequest) {
   } = await supabase.auth.getUser()
 
   const pathname = req.nextUrl.pathname
-  const isAuthRoute = pathname === '/login' || pathname === '/signup'
+  const role = await getUserRole(supabase, user)
 
-  if (user && isAuthRoute) {
-    const url = req.nextUrl.clone()
-    url.pathname = '/menu'
-    return NextResponse.redirect(url)
+  if (isPublicRoute(pathname)) {
+    if (user && (pathname === '/login' || pathname === '/signup')) {
+      const redirectUrl = req.nextUrl.clone()
+      redirectUrl.pathname = getDefaultRedirect(role)
+      redirectUrl.search = ''
+      return NextResponse.redirect(redirectUrl)
+    }
+
+    return response
   }
 
-  if (!user && !isAuthRoute) {
-    const url = req.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
+  if (!user) {
+    const redirectUrl = req.nextUrl.clone()
+    redirectUrl.pathname = '/login'
+    redirectUrl.search = ''
+    return NextResponse.redirect(redirectUrl)
+  }
+
+  if (isStaffOrManagerRoute(pathname)) {
+    if (role !== 'staff' && role !== 'manager' && role !== 'admin') {
+      const redirectUrl = req.nextUrl.clone()
+      redirectUrl.pathname = '/dashboard'
+      redirectUrl.searchParams.set('unauthorized', '1')
+      return NextResponse.redirect(redirectUrl)
+    }
+
+    return response
+  }
+
+  if (isCustomerRoute(pathname)) {
+    return response
   }
 
   return response
 }
 
 export const config = {
-  matcher: [
-    '/((?!login|signup|api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 }

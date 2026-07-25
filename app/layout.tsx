@@ -7,6 +7,7 @@ import type { User } from '@supabase/supabase-js'
 
 import { getCurrentUser, signOut } from '@/lib/auth'
 import { Navigation } from '@/components/Navigation'
+import { AIAssistant } from '@/components/AIAssistant'
 import { Toaster } from '@/components/ui/toaster'
 
 import { CartProvider } from '@/context/CartContext'
@@ -69,6 +70,7 @@ export default function RootLayout({
           <CartProvider>
             <Toaster />
             {children}
+            <AIAssistant role="customer" />
           </CartProvider>
         </body>
       </html>
@@ -83,6 +85,7 @@ export default function RootLayout({
           <Navigation userEmail={user?.email ?? null} onLogout={handleLogout}>
             {children}
           </Navigation>
+          <AIAssistant role={user?.email ? 'customer' : 'customer'} />
         </CartProvider>
       </body>
     </html>
