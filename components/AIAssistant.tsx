@@ -70,13 +70,13 @@ export function AIAssistant({ role }: AIAssistantProps) {
       const assistantMessage: Message = {
         id: Date.now() + 1,
         role: 'assistant',
-        content: data.response || 'I could not generate a response right now.',
+        content: data.response || data.debugError || data.error || 'I could not generate a response right now.',
       }
       setMessages((current) => [...current, assistantMessage])
-    } catch (error) {
+    } catch (error: any) {
       setMessages((current) => [
         ...current,
-        { id: Date.now() + 2, role: 'assistant', content: 'The assistant is unavailable right now. Please try again shortly.' },
+        { id: Date.now() + 2, role: 'assistant', content: `Error: ${error?.message || 'The assistant encountered a connection issue.'}` },
       ])
     } finally {
       setLoading(false)
