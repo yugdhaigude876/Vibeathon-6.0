@@ -53,41 +53,28 @@ export default function MenuPage() {
   const [priceRange, setPriceRange] = useState<string>('all')
   const [dietaryFilter, setDietaryFilter] = useState<string>('All')
 
-  // Fetch initial menu items from Supabase or fallback to Luft Menu
   const fetchMenuItems = async () => {
     try {
       setLoading(true)
       setError(null)
-      const { data, error: fetchError } = await supabase
-        .from('menu_items')
-        .select('*')
-        .order('category', { ascending: true })
-        .order('name', { ascending: true })
 
-      if (fetchError) {
-        console.warn('Notice fetching menu items:', fetchError?.message || fetchError)
-        // Use Luft Ka Menu fallback
-        const formattedLuft: MenuItem[] = LUFT_MENU_ITEMS.map((item, idx) => ({
-          id: `luft-${idx + 1}`,
-          name: item.name,
-          description: item.description,
-          price: item.price,
-          category: item.category,
-          is_available: item.is_available,
-        }))
-        setMenuItems(formattedLuft)
-      } else if (data && data.length > 0) {
-        setMenuItems(data as MenuItem[])
+      const formattedLuft: MenuItem[] = LUFT_MENU_ITEMS.map((item, idx) => ({
+        id: `luft-${idx + 1}`,
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        category: item.category,
+        is_available: item.is_available,
+      }))
+
+      // Fetch database items if any exist and merge/override
+      const { data } = await supabase.from('menu_items').select('*')
+      if (data && data.length > 0) {
+        // combine DB items and LUFT items, removing duplicates by name
+        const dbNames = new Set(data.map((d: any) => d.name.toLowerCase()))
+        const nonDuplicateLuft = formattedLuft.filter((l) => !dbNames.has(l.name.toLowerCase()))
+        setMenuItems([...(data as MenuItem[]), ...nonDuplicateLuft])
       } else {
-        // Fallback if table is empty
-        const formattedLuft: MenuItem[] = LUFT_MENU_ITEMS.map((item, idx) => ({
-          id: `luft-${idx + 1}`,
-          name: item.name,
-          description: item.description,
-          price: item.price,
-          category: item.category,
-          is_available: item.is_available,
-        }))
         setMenuItems(formattedLuft)
       }
     } catch (err: any) {
