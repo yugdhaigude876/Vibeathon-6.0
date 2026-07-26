@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { BreadcrumbNav } from '@/components/BreadcrumbNav'
 
 export interface MenuItem {
   id: string
@@ -23,7 +22,6 @@ export interface MenuItem {
 }
 
 const DEFAULT_CATEGORIES = ['All', 'Main', 'Appetizer', 'Side', 'Beverage']
-const DIETARY_OPTIONS = ['All', 'Vegetarian', 'Vegan', 'Gluten-Free', 'Dairy-Free']
 
 export default function MenuPage() {
   const supabase = createClient()
@@ -37,7 +35,7 @@ export default function MenuPage() {
   const [priceRange, setPriceRange] = useState<string>('all')
   const [dietaryFilter, setDietaryFilter] = useState<string>('All')
 
-  // Fetch initial menu items from Supabase
+  // Fetch initial menu items from Supabase or fallback to Luft Menu
   const fetchMenuItems = async () => {
     try {
       setLoading(true)
@@ -50,13 +48,41 @@ export default function MenuPage() {
 
       if (fetchError) {
         console.error('Error fetching menu items:', fetchError)
-        setError(fetchError.message)
-      } else if (data) {
+        // Use Luft Ka Menu fallback
+        const formattedLuft: MenuItem[] = LUFT_MENU_ITEMS.map((item, idx) => ({
+          id: `luft-${idx + 1}`,
+          name: item.name,
+          description: item.description,
+          price: item.price,
+          category: item.category,
+          is_available: item.is_available,
+        }))
+        setMenuItems(formattedLuft)
+      } else if (data && data.length > 0) {
         setMenuItems(data as MenuItem[])
+      } else {
+        // Fallback if table is empty
+        const formattedLuft: MenuItem[] = LUFT_MENU_ITEMS.map((item, idx) => ({
+          id: `luft-${idx + 1}`,
+          name: item.name,
+          description: item.description,
+          price: item.price,
+          category: item.category,
+          is_available: item.is_available,
+        }))
+        setMenuItems(formattedLuft)
       }
     } catch (err: any) {
       console.error('Unexpected error fetching menu:', err)
-      setError(err?.message || 'Failed to load menu items')
+      const formattedLuft: MenuItem[] = LUFT_MENU_ITEMS.map((item, idx) => ({
+        id: `luft-${idx + 1}`,
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        category: item.category,
+        is_available: item.is_available,
+      }))
+      setMenuItems(formattedLuft)
     } finally {
       setLoading(false)
     }
@@ -129,18 +155,7 @@ export default function MenuPage() {
     const fetchedCategories = Array.from(
       new Set(menuItems.map((item) => item.category).filter(Boolean))
     )
-    const combined = ['All']
-    DEFAULT_CATEGORIES.slice(1).forEach((cat) => {
-      if (!combined.map((c) => c.toLowerCase()).includes(cat.toLowerCase())) {
-        combined.push(cat)
-      }
-    })
-    fetchedCategories.forEach((cat) => {
-      if (!combined.map((c) => c.toLowerCase()).includes(cat.toLowerCase())) {
-        combined.push(cat)
-      }
-    })
-    return combined
+    return ['All', ...fetchedCategories]
   }, [menuItems])
 
   // Filter items by category, price, dietary tags, and real-time search query
