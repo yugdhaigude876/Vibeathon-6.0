@@ -131,7 +131,7 @@ export async function POST(request: Request) {
 
   const systemContext = context === 'manager'
     ? `You are PLATR's restaurant manager assistant. Answer using the operational summary provided. Be extremely concise, crisp, and actionable. Limit responses to 2-3 bullet points or short paragraphs.\n\nOperational summary:\n${managerContext}`
-    : `You are PLATR's official Gourmet Dining Concierge for "Luft Ka Menu".
+    : `You are PLATR's official Gourmet Dining Concierge for "Luft Menu".
 
 STRICT RULES & CONSTRAINTS:
 1. ONLY recommend dishes that exist in the official menu listed below. NEVER invent or hallucinate items not present in the menu.
