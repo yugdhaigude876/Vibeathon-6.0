@@ -36,7 +36,12 @@ function buildFallbackResponse(context: AssistantPayload['context'], prompt: str
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as Partial<AssistantPayload>
+  let body: Partial<AssistantPayload>
+  try {
+    body = (await request.json()) as Partial<AssistantPayload>
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 })
+  }
   const prompt = body.prompt?.trim()
   const context = body.context ?? 'customer'
 
@@ -148,8 +153,8 @@ ${menuContext}`
       const result = await model.generateContent(`${systemContext}\n\nUser question: ${prompt}`)
       text = await result.response.text()
     } catch (modelError: any) {
-      console.warn('gemini-2.5-flash failed, trying gemini-3.6-flash:', modelError?.message || modelError)
-      const fallbackModel = genAI.getGenerativeModel({ model: 'gemini-3.6-flash' })
+      console.warn('gemini-2.5-flash failed, trying gemini-1.5-flash:', modelError?.message || modelError)
+      const fallbackModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
       const result = await fallbackModel.generateContent(`${systemContext}\n\nUser question: ${prompt}`)
       text = await result.response.text()
     }

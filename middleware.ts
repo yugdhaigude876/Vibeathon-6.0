@@ -1,8 +1,8 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-const CUSTOMER_ONLY_ROUTES = ['/menu', '/orders', '/reservations']
-const AUTHENTICATED_ROUTES = ['/dashboard']
+const CUSTOMER_ONLY_ROUTES = ['/menu', '/orders', '/reservations', '/checkout', '/dashboard']
+const AUTHENTICATED_ROUTES: string[] = []
 const STAFF_MANAGER_ROUTES = ['/staff']
 const MANAGER_ONLY_ROUTES = ['/manager']
 const PUBLIC_ROUTES = ['/login', '/signup']

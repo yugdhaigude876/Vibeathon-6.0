@@ -504,7 +504,7 @@ export default function MenuPage() {
                 <p className="text-xs font-bold uppercase tracking-wider text-zinc-950/80">
                   {totalItems} {totalItems === 1 ? 'Item' : 'Items'} in Cart
                 </p>
-                <p className="text-lg font-black">{formatPrice(subtotal * 1.085)}</p>
+                <p className="text-lg font-black">{formatPrice(subtotal * 1.05)}</p>
               </div>
             </div>
 

@@ -115,7 +115,18 @@ export default function OrderTrackingPage() {
           .single()
 
         if (simpleErr) {
-          setError(simpleErr.message)
+          // Final fallback: check localStorage for mock/offline orders
+          try {
+            const localOrders: Order[] = JSON.parse(localStorage.getItem('platr_user_orders') || '[]')
+            const localOrder = localOrders.find((o) => o.id === id)
+            if (localOrder) {
+              setOrder(localOrder)
+            } else {
+              setError(simpleErr.message)
+            }
+          } catch {
+            setError(simpleErr.message)
+          }
         } else {
           setOrder(simpleData as Order)
         }
@@ -179,7 +190,7 @@ export default function OrderTrackingPage() {
   // Calculation helpers
   const subtotal = useMemo(() => {
     if (!order?.order_items || order.order_items.length === 0) {
-      return (order?.total_amount || 0) / 1.085
+      return (order?.total_amount || 0) / 1.05
     }
     return order.order_items.reduce(
       (sum, item) => sum + item.quantity * Number(item.unit_price || 0),
@@ -187,7 +198,7 @@ export default function OrderTrackingPage() {
     )
   }, [order])
 
-  const tax = useMemo(() => subtotal * 0.085, [subtotal])
+  const tax = useMemo(() => subtotal * 0.05, [subtotal])
   const totalAmount = useMemo(() => order?.total_amount || subtotal + tax, [order, subtotal, tax])
 
   if (loading) {

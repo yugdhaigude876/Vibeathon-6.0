@@ -39,6 +39,7 @@ export function useRoleGuard(allowedRoles: AllowedRole[], fallbackPath = '/dashb
       if (!active) return
 
       if (!user) {
+        setLoading(false)
         router.replace('/login')
         return
       }
@@ -52,6 +53,7 @@ export function useRoleGuard(allowedRoles: AllowedRole[], fallbackPath = '/dashb
       const role = String(profile?.role || user.user_metadata?.role || 'customer').toLowerCase()
 
       if (!shouldAllowRole(role, allowedRoles)) {
+        setLoading(false)
         router.replace(fallbackPath)
         return
       }
