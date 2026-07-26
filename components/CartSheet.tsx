@@ -75,7 +75,7 @@ export function CartSheet() {
         .single()
 
       if (orderError) {
-        console.error('Error inserting order:', orderError)
+        console.warn('Error inserting order:', orderError?.message || orderError)
         toast({
           title: 'Order Placement Failed',
           description: orderError.message || 'Failed to create order record.',
@@ -98,7 +98,7 @@ export function CartSheet() {
         .insert(orderItems)
 
       if (itemsError) {
-        console.error('Error inserting order items:', itemsError)
+        console.warn('Error inserting order items:', itemsError?.message || itemsError)
         toast({
           title: 'Order Placement Warning',
           description: 'Order created but failed to attach items. Please contact support.',
@@ -119,7 +119,7 @@ export function CartSheet() {
       setIsOpen(false)
       router.push(`/orders/${order.id}`)
     } catch (err: any) {
-      console.error('Unexpected checkout error:', err)
+      console.warn('Unexpected checkout error:', err?.message || err)
       toast({
         title: 'Checkout Error',
         description: err?.message || 'An unexpected error occurred during checkout.',
