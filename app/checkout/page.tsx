@@ -41,7 +41,6 @@ export default function CheckoutPage() {
             quantity: c.quantity,
             price: c.item.price,
           })),
-          restaurantId: null, // Default
           notes,
         }),
       })
@@ -112,8 +111,8 @@ export default function CheckoutPage() {
                     <p className="text-sm text-zinc-400">Qty: {c.quantity}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-amber-400">${(c.item.price * c.quantity).toFixed(2)}</p>
-                    <p className="text-xs text-zinc-500">${c.item.price.toFixed(2)} each</p>
+                      <p className="font-semibold text-amber-400">₹{(c.item.price * c.quantity).toFixed(2)}</p>
+                    <p className="text-xs text-zinc-500">₹{c.item.price.toFixed(2)} each</p>
                   </div>
                 </div>
               ))}

@@ -44,7 +44,6 @@ export function CartSheet() {
     try {
       setIsSubmitting(true)
 
-      // 1. Verify user is logged in
       const {
         data: { user },
         error: authError,
@@ -61,63 +60,36 @@ export function CartSheet() {
         return
       }
 
-      // 2. Insert record into 'orders' table
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          restaurant_id: null,
-          customer_id: user.id,
-          total_amount: totalAmount,
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          items: cartItems.map((ci) => ({
+            menuItemId: ci.item.id,
+            quantity: ci.quantity,
+            price: ci.item.price,
+          })),
           notes: notes.trim() || null,
-          status: 'pending',
-        })
-        .select()
-        .single()
+        }),
+      })
 
-      if (orderError) {
-        console.warn('Error inserting order:', orderError?.message || orderError)
-        toast({
-          title: 'Order Placement Failed',
-          description: orderError.message || 'Failed to create order record.',
-          variant: 'destructive',
-        })
-        setIsSubmitting(false)
-        return
+      const result = await response.json()
+
+      if (!response.ok || result.error) {
+        throw new Error(result.error || 'Failed to place order.')
       }
 
-      // 3. Insert corresponding items into 'order_items' table
-      const orderItems = cartItems.map((ci) => ({
-        order_id: order.id,
-        menu_item_id: ci.item.id,
-        quantity: ci.quantity,
-        unit_price: ci.item.price,
-      }))
-
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems)
-
-      if (itemsError) {
-        console.warn('Error inserting order items:', itemsError?.message || itemsError)
-        toast({
-          title: 'Order Placement Warning',
-          description: 'Order created but failed to attach items. Please contact support.',
-          variant: 'destructive',
-        })
-        setIsSubmitting(false)
-        return
-      }
-
-      // 4. On success: Clear cart, close sheet, redirect to /orders/[orderId]
       toast({
         title: 'Order Placed Successfully! 🎉',
-        description: `Order #${order.id.slice(0, 8)} has been submitted.`,
+        description: `Order #${result.orderId.slice(0, 8)} has been submitted.`,
       })
 
       clearCart()
       setNotes('')
       setIsOpen(false)
-      router.push(`/orders/${order.id}`)
+      router.push(`/orders/${result.orderId}`)
     } catch (err: any) {
       console.warn('Unexpected checkout error:', err?.message || err)
       toast({

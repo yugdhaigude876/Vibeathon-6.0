@@ -42,7 +42,10 @@ export async function POST(request: Request) {
         id: user.id,
         email,
         role: 'customer',
-        restaurant_id: null,
+        restaurant_id:
+          process.env.NEXT_PUBLIC_DEFAULT_RESTAURANT_ID ||
+          process.env.DEFAULT_RESTAURANT_ID ||
+          null,
       })
       .select()
       .single()

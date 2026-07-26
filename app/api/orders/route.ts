@@ -5,7 +5,7 @@ import { checkRateLimit, rateLimitExceededResponse } from '@/lib/rateLimiter'
 
 export async function POST(request: Request) {
   try {
-    const { items, restaurantId, notes } = await request.json()
+    const { items, notes } = await request.json()
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: 'Missing or invalid items array' }, { status: 400 })
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     // ── SECURITY: Role check — only customers may place orders ───────────────
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, restaurant_id')
       .eq('id', user.id)
       .maybeSingle()
 
@@ -60,6 +60,22 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: 'Forbidden: staff and managers should not place customer orders' },
         { status: 403 }
+      )
+    }
+
+    if (profileError) {
+      return NextResponse.json({ error: 'Failed to load customer profile' }, { status: 500 })
+    }
+
+    const restaurantId =
+      profile?.restaurant_id ||
+      process.env.NEXT_PUBLIC_DEFAULT_RESTAURANT_ID ||
+      process.env.DEFAULT_RESTAURANT_ID
+
+    if (!restaurantId) {
+      return NextResponse.json(
+        { error: 'Restaurant not configured for your account. Please contact support.' },
+        { status: 500 }
       )
     }
 
@@ -125,7 +141,7 @@ export async function POST(request: Request) {
       .from('orders')
       .insert({
         customer_id: user.id,
-        restaurant_id: restaurantId || null,
+        restaurant_id: restaurantId,
         status: 'pending',
         total_amount: totalAmount,
         notes: notes || null,
