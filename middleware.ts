@@ -28,7 +28,9 @@ function isManagerOnlyRoute(pathname: string) {
 }
 
 function getDefaultRedirect(role: string) {
-  return role === 'customer' ? '/menu' : '/dashboard'
+  if (role === 'staff') return '/staff/kitchen'
+  if (role === 'manager' || role === 'admin') return '/manager'
+  return '/menu'
 }
 
 async function getUserRole(

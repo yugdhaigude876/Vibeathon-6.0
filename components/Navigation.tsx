@@ -191,8 +191,33 @@ export function Navigation({ userEmail, onLogout, children }: NavigationProps) {
           </nav>
         </aside>
 
-        <main className="flex-1 overflow-auto p-4 sm:p-6 md:p-8">{children}</main>
+        <main className="flex-1 overflow-auto p-4 pb-20 sm:p-6 md:p-8 md:pb-8">{children}</main>
       </div>
+
+      {/* Persistent Mobile Bottom Navigation Bar (< 768px) */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-amber-500/20 bg-zinc-950/95 px-2 py-1.5 backdrop-blur-md md:hidden">
+        {navLinks.map((link) => {
+          const Icon = link.icon
+          const pathname = usePathname()
+          const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))
+
+          return (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={cn(
+                'flex min-h-[44px] min-w-[44px] flex-col items-center justify-center gap-0.5 rounded-xl px-2.5 py-1 text-xs font-semibold transition-all',
+                isActive
+                  ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              )}
+            >
+              <Icon className={cn('h-5 w-5', isActive ? 'text-amber-400' : 'text-zinc-400')} />
+              <span className="text-[10px] tracking-tight">{link.label}</span>
+            </Link>
+          )
+        })}
+      </nav>
     </div>
   )
 }
