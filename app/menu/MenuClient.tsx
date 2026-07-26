@@ -194,49 +194,102 @@ export function MenuClient({ initialItems }: { initialItems?: MenuItem[] }) {
         </TabsList>
       </Tabs>
 
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
         {filteredItems.length === 0 ? (
-          <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-10 text-center text-zinc-400">
+          <div className="col-span-full rounded-3xl border border-zinc-800 bg-zinc-950 p-10 text-center text-zinc-400">
             No menu items matched your filters.
           </div>
         ) : (
-          filteredItems.map((item) => (
-            <Card key={item.id} className="group overflow-hidden rounded-[2rem] border border-zinc-800 bg-zinc-950/90 shadow-xl shadow-black/20 transition duration-300 hover:-translate-y-1 hover:border-amber-500">
-              <CardHeader className="space-y-4 border-b border-zinc-800/70 pb-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <CardTitle className="text-xl font-semibold text-zinc-50">{item.name}</CardTitle>
-                    <p className="text-sm text-zinc-400">{item.category}</p>
+          filteredItems.map((item) => {
+            const tags = getDietaryTags(item)
+            const isNonVeg = tags.includes('non-veg')
+
+            return (
+              <Card
+                key={item.id}
+                className={`flex flex-col justify-between overflow-hidden transition-all duration-300 border rounded-3xl ${
+                  !item.is_available
+                    ? 'border-zinc-800/60 bg-zinc-900/40 opacity-75'
+                    : 'border-zinc-800/80 bg-zinc-950/90 hover:border-amber-500/40 hover:shadow-xl hover:shadow-amber-500/10'
+                }`}
+              >
+                <div className="p-5 space-y-3">
+                  {/* Top Bar: Veg/Non-Veg Dot + Category Badge + Price Badge */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      {/* Standard Indian Veg (Green Circle) / Non-Veg (Red Dot) Indicator */}
+                      <div
+                        className={`h-4 w-4 rounded-sm border flex items-center justify-center shrink-0 ${
+                          isNonVeg ? 'border-red-500' : 'border-emerald-500'
+                        }`}
+                        title={isNonVeg ? 'Non-Vegetarian' : 'Vegetarian'}
+                      >
+                        <div
+                          className={`h-2 w-2 ${
+                            isNonVeg ? 'bg-red-500 rounded-full' : 'bg-emerald-500 rounded-full'
+                          }`}
+                        />
+                      </div>
+                      <Badge variant="secondary" className="shrink-0 text-[10px] uppercase tracking-wider font-semibold bg-zinc-900 text-zinc-400 border border-zinc-800">
+                        {item.category}
+                      </Badge>
+                    </div>
+
+                    {/* Gold Price Pill */}
+                    <Badge className="rounded-full bg-amber-500 px-3 py-1 text-xs font-black text-zinc-950 shadow-sm shadow-amber-500/20">
+                      {formatPrice(item.price)}
+                    </Badge>
                   </div>
-                  <div className="rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-zinc-950 shadow-sm shadow-amber-500/20">
-                    {formatPrice(item.price)}
+
+                  {/* Title on its own dedicated full line */}
+                  <CardTitle className="text-base font-bold text-zinc-100 leading-snug break-words pt-1">
+                    {item.name}
+                  </CardTitle>
+
+                  {/* Item Description */}
+                  <p className="text-xs text-zinc-400 leading-relaxed line-clamp-3 min-h-[2.5rem]">
+                    {item.description || 'No description available for this dish.'}
+                  </p>
+
+                  {/* Dietary Pill Tags */}
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {tags.map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant="outline"
+                        className={`text-[9px] uppercase font-bold px-2 py-0.5 border ${
+                          tag === 'non-veg'
+                            ? 'border-red-500/30 text-red-400 bg-red-950/20'
+                            : tag === 'veg'
+                            ? 'border-emerald-500/30 text-emerald-400 bg-emerald-950/20'
+                            : 'border-amber-500/30 text-amber-400 bg-amber-950/20'
+                        }`}
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {getDietaryTags(item).map((tag) => (
-                    <span key={tag} className="rounded-full border border-zinc-800 bg-zinc-900/90 px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-zinc-300">
-                      {tag}
+
+                {/* Card Footer with Full Width Add to Cart & Stock Status */}
+                <div className="p-5 pt-0 mt-auto">
+                  <div className="flex items-center justify-between gap-3 pt-3 border-t border-zinc-800/60">
+                    <Button
+                      size="sm"
+                      onClick={() => handleAddToCart(item)}
+                      disabled={!item.is_available}
+                      className="flex-1 bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold text-xs rounded-xl shadow-md shadow-amber-500/10"
+                    >
+                      {item.is_available ? 'Add to Cart' : 'Unavailable'}
+                    </Button>
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-500 shrink-0">
+                      {item.is_available ? 'IN STOCK' : 'OUT OF STOCK'}
                     </span>
-                  ))}
+                  </div>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-5 p-0 pt-4">
-                <p className="min-h-[4.5rem] text-sm leading-6 text-zinc-400">{item.description || 'A royal specialty from our menu.'}</p>
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <Button
-                    className="w-full bg-amber-600 text-zinc-950 transition hover:bg-amber-500 disabled:cursor-not-allowed disabled:bg-zinc-800"
-                    onClick={() => handleAddToCart(item)}
-                    disabled={!item.is_available}
-                  >
-                    {item.is_available ? 'Add to Cart' : 'Unavailable'}
-                  </Button>
-                  <span className="text-xs uppercase tracking-[0.24em] text-zinc-500">
-                    {item.is_available ? 'In stock' : 'Out of stock'}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+              </Card>
+            )
+          })
         )}
       </div>
     </div>
