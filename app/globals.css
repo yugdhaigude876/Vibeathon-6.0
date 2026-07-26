@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 38 92% 50%;
+    --primary-foreground: 240 10% 3.9%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 38 92% 50%;
+    --radius: 0.5rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-zinc-950 text-zinc-50 antialiased selection:bg-amber-500/30 selection:text-amber-200;
+  }
+}
+
+@layer utilities {
+  .gold-gradient-text {
+    @apply bg-gradient-to-r from-amber-100 via-amber-300 to-amber-500 bg-clip-text text-transparent;
+  }
+  .gold-border {
+    @apply border border-amber-500/30 hover:border-amber-500/60 transition-colors;
+  }
+  .royal-card {
+    @apply bg-zinc-900/90 border border-amber-500/20 backdrop-blur-md shadow-xl shadow-amber-500/5 rounded-2xl transition-all;
+  }
+  .royal-button {
+    @apply bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-600 text-zinc-950 font-bold hover:brightness-110 shadow-md shadow-amber-600/20 transition-all active:scale-[0.98];
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
