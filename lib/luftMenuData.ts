@@ -85,7 +85,6 @@ export const LUFT_MENU_ITEMS: LuftMenuItem[] = [
   { name: 'Fajita Fish Tikka', description: 'Chili spice marinated fish topped with bellpeppers and cheese', price: 720, category: 'Charcoal Plates', is_available: true },
 
   // PIZZA & BURGERS
-  { name: 'Classic Gourmet Beef Burger', description: 'Juicy seasoned beef patty with melted cheddar, caramelized onions, crisp lettuce & signature house sauce', price: 680, category: 'Pizza & Burgers', is_available: true },
   { name: 'Corn And Veg Carne Pizza', description: 'Charred corn, mock meat, pickled chili, onions, mozzarella, cheddar', price: 580, category: 'Pizza & Burgers', is_available: true },
   { name: 'Chili Con Carne Pizza', description: 'Spanish minced meat, corn, peppers, pickled chili, onions, mozzarella, cheddar', price: 640, category: 'Pizza & Burgers', is_available: true },
   { name: 'Birria Pizza', description: 'Slow cooked lamb, onions, cilantro, mozzarella, cheddar', price: 750, category: 'Pizza & Burgers', is_available: true },
@@ -146,14 +145,14 @@ export const LUFT_MENU_ITEMS: LuftMenuItem[] = [
   { name: 'Fresh Watermelon & Basil Cooler', description: 'Pressed watermelon juice infused with sweet basil', price: 280, category: 'Beverages', is_available: true },
 
   // SIDES & DESSERT
-  { name: 'Roti / Butter Roti', description: 'Traditional Indian flatbread', price: 90, category: 'Sides', is_available: true },
-  { name: 'Naan / Butter Naan', description: 'Soft oven baked flatbread', price: 130, category: 'Sides', is_available: true },
-  { name: 'Cheese Garlic Naan', description: 'Oven baked flatbread stuffed with cheese and garlic', price: 170, category: 'Sides', is_available: true },
+  { name: 'Roti / Butter Roti', description: 'Traditional Indian flatbread', price: 180, category: 'Sides', is_available: true },
+  { name: 'Naan / Butter Naan', description: 'Soft oven baked flatbread', price: 240, category: 'Sides', is_available: true },
+  { name: 'Cheese Garlic Naan', description: 'Oven baked flatbread stuffed with cheese and garlic', price: 290, category: 'Sides', is_available: true },
   { name: 'Steamed Rice', description: 'Fluffy steamed basmati rice', price: 310, category: 'Sides', is_available: true },
   { name: 'Butter Corn', description: 'Sweet corn tossed in melted butter and herbs', price: 280, category: 'Sides', is_available: true },
   { name: 'Corn and Potato Mash', description: 'Creamy mashed potato and corn', price: 280, category: 'Sides', is_available: true },
   { name: 'Taffioli Banoffee', description: 'Caramelized and fresh banana, dulce stuffed crisp pastry', price: 510, category: 'Dessert', is_available: true },
   { name: 'Churros Palate', description: 'Warm churros with dark chocolate, salted caramel, strawberry ganache', price: 530, category: 'Dessert', is_available: true },
-  { name: 'Avocado Ice Cream with Avocado Salsa', description: 'Creamy avocado ice cream paired with fresh avocado salsa', price: 260, category: 'Dessert', is_available: true },
-  { name: 'Mango Passion Fruit Sorbet', description: 'Refreshing tropical mango and passion fruit sorbet', price: 240, category: 'Dessert', is_available: true },
+  { name: 'Avocado Ice Cream with Avocado Salsa', description: 'Creamy avocado ice cream paired with fresh avocado salsa', price: 360, category: 'Dessert', is_available: true },
+  { name: 'Mango Passion Fruit Sorbet', description: 'Refreshing tropical mango and passion fruit sorbet', price: 340, category: 'Dessert', is_available: true },
 ]

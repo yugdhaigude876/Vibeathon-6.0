@@ -23,7 +23,7 @@ export interface MenuItem {
   created_at?: string
 }
 
-const DEFAULT_CATEGORIES = ['All', 'Main', 'Appetizer', 'Side', 'Beverage']
+const DEFAULT_CATEGORIES = ['All', 'Main', 'Appetizer', 'Beverages', 'Side']
 const DIETARY_OPTIONS = ['All', 'Veg', 'Non-Veg']
 
 function formatPrice(value: number | null | undefined) {
@@ -36,12 +36,27 @@ function getDietaryTags(item: MenuItem): string[] {
   const text = `${name} ${desc}`
   const tags: string[] = []
 
-  if (text.includes('vegan')) tags.push('vegan')
-  if (text.includes('gluten-free') || text.includes('gluten free')) tags.push('gluten-free')
-  if (text.includes('veg') && !text.includes('non-veg')) tags.push('veg')
-  if (text.includes('chicken') || text.includes('mutton') || text.includes('fish') || text.includes('prawn') || text.includes('meat') || text.includes('non-veg')) {
+  const nonVegKeywords = [
+    'chicken', 'mutton', 'lamb', 'fish', 'prawn', 'shrimp', 'crab', 'seafood',
+    'beef', 'pepperoni', 'meat', 'chili con carne', 'bacon', 'kebab', 'salmon',
+    'squid', 'carne chicken', 'barba"cola"', 'mob pizza'
+  ]
+
+  const isNonVeg = nonVegKeywords.some((kw) => text.includes(kw))
+  if (isNonVeg) {
     tags.push('non-veg')
+  } else {
+    tags.push('veg')
   }
+
+  if (text.includes('vegan') || text.includes('plant') || text.includes('avocado') || text.includes('edamame') || text.includes('quinoa')) {
+    tags.push('vegan')
+  }
+
+  if (text.includes('gluten-free') || text.includes('gluten free') || text.includes('tacos') || text.includes('tostada') || text.includes('rice') || text.includes('corn')) {
+    tags.push('gluten-free')
+  }
+
   return tags
 }
 
@@ -156,21 +171,6 @@ export default function MenuPage() {
     }
   }, [])
 
-  const getDietaryTags = (item: MenuItem): ('veg' | 'non-veg')[] => {
-    const name = (item.name || '').toLowerCase()
-    const desc = (item.description || '').toLowerCase()
-    const text = `${name} ${desc}`
-
-    const nonVegKeywords = [
-      'chicken', 'mutton', 'lamb', 'fish', 'prawn', 'shrimp', 'crab', 'seafood',
-      'beef', 'pepperoni', 'meat', 'chili con carne', 'bacon', 'kebab', 'salmon',
-      'squid', 'carne chicken', 'barba"cola"', 'mob pizza'
-    ]
-
-    const isNonVeg = nonVegKeywords.some((kw) => text.includes(kw))
-    return isNonVeg ? ['non-veg'] : ['veg']
-  }
-
   // Dynamic category list combining default categories and database categories
   const categories = useMemo(() => {
     const fetchedCategories = Array.from(
@@ -198,8 +198,7 @@ export default function MenuPage() {
       const tags = getDietaryTags(item)
       const matchesDietary =
         dietaryFilter === 'All' ||
-        (dietaryFilter === 'Veg' && tags.includes('veg')) ||
-        (dietaryFilter === 'Non-Veg' && tags.includes('non-veg'))
+        tags.some((t) => t.toLowerCase() === dietaryFilter.toLowerCase())
 
       return matchesCategory && matchesSearch && matchesPrice && matchesDietary
     })

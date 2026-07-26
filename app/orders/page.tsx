@@ -43,11 +43,26 @@ export default function OrdersPage() {
 
       const { data, error: fetchErr } = await query
 
-      if (fetchErr) {
-        console.warn('Error fetching orders:', fetchErr?.message || fetchErr)
+      let mergedOrders: Order[] = []
+      if (data && data.length > 0) {
+        mergedOrders = [...(data as Order[])]
+      }
+
+      // Merge with resilient localStorage orders
+      try {
+        const localOrders: Order[] = JSON.parse(localStorage.getItem('platr_user_orders') || '[]')
+        localOrders.forEach((lOrder) => {
+          if (!mergedOrders.some((o) => o.id === lOrder.id)) {
+            mergedOrders.unshift(lOrder)
+          }
+        })
+      } catch (err) {
+        console.warn('LocalStorage order read failed:', err)
+      }
+
+      setOrders(mergedOrders)
+      if (fetchErr && mergedOrders.length === 0) {
         setError(fetchErr.message)
-      } else if (data) {
-        setOrders(data as Order[])
       }
     } catch (err: any) {
       console.error('Unexpected error fetching orders:', err)

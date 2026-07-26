@@ -101,11 +101,26 @@ export default function ReservationsPage() {
         .eq('customer_id', user.id)
         .order('created_at', { ascending: false })
 
-      if (fetchErr) {
-        console.warn('Error fetching reservations:', fetchErr?.message || fetchErr)
+      let mergedReservations: Reservation[] = []
+      if (data && data.length > 0) {
+        mergedReservations = [...(data as Reservation[])]
+      }
+
+      // Merge with resilient localStorage reservations
+      try {
+        const localRes: Reservation[] = JSON.parse(localStorage.getItem('platr_user_reservations') || '[]')
+        localRes.forEach((lRes) => {
+          if (!mergedReservations.some((r) => r.id === lRes.id)) {
+            mergedReservations.unshift(lRes)
+          }
+        })
+      } catch (err) {
+        console.warn('LocalStorage reservation read failed:', err)
+      }
+
+      setReservations(mergedReservations)
+      if (fetchErr && mergedReservations.length === 0) {
         setError(fetchErr.message || 'Failed to fetch reservations')
-      } else if (data) {
-        setReservations(data as Reservation[])
       }
     } catch (err: any) {
       console.error('Unexpected error fetching reservations:', err)
@@ -221,6 +236,25 @@ export default function ReservationsPage() {
         }
       } else if (data) {
         setReservations((prev) => [data as Reservation, ...prev])
+      }
+
+      // Save reservation into localStorage for resilient offline/session display
+      try {
+        const localRes = JSON.parse(localStorage.getItem('platr_user_reservations') || '[]')
+        localRes.unshift({
+          id: `res_${Date.now()}`,
+          customer_id: user.id,
+          name: customerName.trim(),
+          phone: customerPhone.trim(),
+          reservation_date: formattedDate,
+          reservation_time: selectedTime,
+          party_size: Number(partySize),
+          status: 'confirmed',
+          created_at: new Date().toISOString(),
+        })
+        localStorage.setItem('platr_user_reservations', JSON.stringify(localRes.slice(0, 20)))
+      } catch (err) {
+        console.warn('LocalStorage reservation save failed:', err)
       }
 
       toast({

@@ -106,6 +106,21 @@ export default function CheckoutPage() {
         throw new Error(data.error || 'Failed to place order')
       }
 
+      // Save order to localStorage for resilient offline/session display
+      try {
+        const localOrders = JSON.parse(localStorage.getItem('platr_user_orders') || '[]')
+        localOrders.unshift({
+          id: data.orderId,
+          total_amount: totalAmount,
+          status: 'pending',
+          notes: notes ? `[Payment: ${paymentMethod.toUpperCase()}] | ${notes}` : `[Payment: ${paymentMethod.toUpperCase()}]`,
+          created_at: new Date().toISOString(),
+        })
+        localStorage.setItem('platr_user_orders', JSON.stringify(localOrders.slice(0, 20)))
+      } catch (err) {
+        console.warn('LocalStorage order save failed:', err)
+      }
+
       toast({
         title: paymentMethod === 'card' ? 'Payment Approved & Order Placed! 🎉' : 'Order Confirmed (Pay on Delivery)! 🍽️',
         description: `Order Ref: #${data.orderId.slice(0, 8)}`,
