@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useMemo } from 'react'
 import { Search, Plus, Minus, ShoppingBag, Utensils, AlertCircle, SlidersHorizontal, Leaf, CircleDollarSign } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
+import { LUFT_MENU_ITEMS } from '@/lib/luftMenuData'
 import { useCart } from '@/context/CartContext'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'

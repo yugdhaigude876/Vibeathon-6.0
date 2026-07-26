@@ -102,8 +102,8 @@ export default function ReservationsPage() {
         .order('created_at', { ascending: false })
 
       if (fetchErr) {
-        console.error('Error fetching reservations:', fetchErr)
-        setError(fetchErr.message)
+        console.error('Error fetching reservations:', fetchErr?.message || fetchErr)
+        setError(fetchErr.message || 'Failed to fetch reservations')
       } else if (data) {
         setReservations(data as Reservation[])
       }
