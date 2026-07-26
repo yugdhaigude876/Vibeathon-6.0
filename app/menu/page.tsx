@@ -8,8 +8,8 @@ export const revalidate = 60
 
 async function fetchMenuItems(): Promise<MenuItem[]> {
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL\!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY\!
+    process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
   )
 
   const { data } = await supabase.from('menu_items').select('id, name, description, price, category, is_available, image_url, created_at')
