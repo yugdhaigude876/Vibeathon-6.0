@@ -38,7 +38,7 @@ function getDietaryTags(item: MenuItem): string[] {
     if (
       text.includes('vegan') ||
       text.includes('plant-based') ||
-      (text.includes('avocado') && \!text.includes('cream')) ||
+      (text.includes('avocado') && !text.includes('cream')) ||
       text.includes('edamame') ||
       text.includes('quinoa')
     ) {
@@ -78,7 +78,7 @@ export function MenuClient({ initialItems }: { initialItems: MenuItem[] }) {
 
       const query = searchQuery.trim().toLowerCase()
       const matchesSearch =
-        \!query ||
+        !query ||
         item.name?.toLowerCase().includes(query) ||
         (item.description && item.description.toLowerCase().includes(query))
 
@@ -184,7 +184,7 @@ export function MenuClient({ initialItems }: { initialItems: MenuItem[] }) {
                   <Button
                     className="w-full bg-amber-600 hover:bg-amber-500 text-zinc-950"
                     onClick={() => handleAddToCart(item)}
-                    disabled={\!item.is_available}
+                    disabled={!item.is_available}
                   >
                     {item.is_available ? 'Add to Cart' : 'Unavailable'}
                   </Button>
