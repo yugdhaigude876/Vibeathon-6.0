@@ -401,7 +401,7 @@ export default function ManagerPage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-xs text-zinc-300">
-                          {order.table_number ? `Table ${order.table_number}` : 'Walk-in'}
+                          {(order as any).table_number ? `Table ${(order as any).table_number}` : 'Walk-in'}
                         </TableCell>
                         <TableCell className="text-xs font-bold text-amber-400">
                           {formatINR(order.total_amount)}
