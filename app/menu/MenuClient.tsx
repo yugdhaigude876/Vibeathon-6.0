@@ -102,53 +102,55 @@ export function MenuClient({ initialItems }: { initialItems?: MenuItem[] }) {
   }
 
   return (
-    <div className="space-y-7">
-      <div className="rounded-[2rem] border border-zinc-800/80 bg-gradient-to-br from-zinc-950/95 via-zinc-900/90 to-zinc-950/95 p-5 shadow-[0_25px_60px_-30px_rgba(252,211,77,0.75)]">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">
-              <SlidersHorizontal className="h-4 w-4" />
-              Advanced filters
+    <div className="space-y-6">
+      {/* Premium Hero & Filters Banner */}
+      <div className="relative overflow-hidden rounded-3xl border border-zinc-800/80 bg-gradient-to-r from-zinc-950 via-zinc-900 to-amber-950/30 p-6 sm:p-8 shadow-xl shadow-amber-500/5">
+        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 rounded-full bg-amber-500/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-amber-400 border border-amber-500/20">
+              <Sparkles className="h-3.5 w-3.5" /> Gourmet Menu
             </div>
-            <div>
-              <h2 className="text-2xl font-black tracking-tight text-zinc-50">Discover the chef's menu</h2>
-              <p className="max-w-2xl text-sm leading-6 text-zinc-400">
-                Explore chef-curated dishes with smart filters and quick cart access.
-              </p>
-            </div>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-zinc-100">
+              Discover the Chef's Menu
+            </h1>
+            <p className="text-xs sm:text-sm text-zinc-400 max-w-xl">
+              Explore chef-curated dishes with smart filters and quick cart access.
+            </p>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-            <label className="space-y-2 text-sm text-zinc-300">
-              <span className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-zinc-500">
-                <IndianRupee className="h-4 w-4 text-amber-400" />Price cap
-              </span>
+          {/* Inline Filter Controls */}
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            {/* Price Filter */}
+            <div className="flex items-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-950/80 px-3.5 py-2">
+              <IndianRupee className="h-4 w-4 text-amber-400 shrink-0" />
+              <span className="text-xs font-semibold text-zinc-400">Max:</span>
               <select
                 value={priceRange}
                 onChange={(e) => setPriceRange(e.target.value)}
-                className="w-full rounded-3xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 shadow-inner shadow-black/10"
+                className="bg-transparent text-xs font-bold text-zinc-100 focus:outline-none cursor-pointer"
               >
-                <option value="all">All</option>
-                <option value="500">₹500</option>
-                <option value="600">₹600</option>
-                <option value="700">₹700</option>
-                <option value="800">₹800</option>
+                <option value="all" className="bg-zinc-900 text-zinc-100">All Prices</option>
+                <option value="500" className="bg-zinc-900 text-zinc-100">₹500</option>
+                <option value="600" className="bg-zinc-900 text-zinc-100">₹600</option>
+                <option value="700" className="bg-zinc-900 text-zinc-100">₹700</option>
+                <option value="800" className="bg-zinc-900 text-zinc-100">₹800</option>
               </select>
-            </label>
-            <label className="space-y-2 text-sm text-zinc-300">
-              <span className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-zinc-500">
-                <Leaf className="h-4 w-4 text-emerald-400" />Dietary
-              </span>
+            </div>
+
+            {/* Dietary Filter */}
+            <div className="flex items-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-950/80 px-3.5 py-2">
+              <Leaf className="h-4 w-4 text-emerald-400 shrink-0" />
+              <span className="text-xs font-semibold text-zinc-400">Diet:</span>
               <select
                 value={dietaryFilter}
                 onChange={(e) => setDietaryFilter(e.target.value)}
-                className="w-full rounded-3xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 shadow-inner shadow-black/10"
+                className="bg-transparent text-xs font-bold text-zinc-100 focus:outline-none cursor-pointer"
               >
                 {DIETARY_OPTIONS.map((option) => (
-                  <option key={option} value={option}>{option}</option>
+                  <option key={option} value={option} className="bg-zinc-900 text-zinc-100">{option}</option>
                 ))}
               </select>
-            </label>
+            </div>
           </div>
         </div>
       </div>
