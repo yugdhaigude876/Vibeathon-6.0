@@ -29,6 +29,7 @@ export default function CheckoutPage() {
   const { toast } = useToast()
   const { cartItems, subtotal, tax, totalAmount, clearCart } = useCart()
 
+  const [tableNumber, setTableNumber] = useState('')
   const [notes, setNotes] = useState('')
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash'>('card')
   const [loading, setLoading] = useState(false)
@@ -64,6 +65,15 @@ export default function CheckoutPage() {
       return
     }
 
+    if (!tableNumber.trim()) {
+      toast({
+        title: 'Table Number Required ⚠️',
+        description: 'Please enter your Table Number before placing an order.',
+        variant: 'destructive',
+      })
+      return
+    }
+
     if (paymentMethod === 'card') {
       if (!cardName.trim() || cardNumber.replace(/\s/g, '').length < 15 || !expiry || cvv.length < 3) {
         toast({
@@ -91,6 +101,8 @@ export default function CheckoutPage() {
             quantity: c.quantity,
             price: c.item.price,
           })),
+          tableNumber: tableNumber.trim(),
+          table_number: tableNumber.trim(),
           notes,
           paymentMethod,
           paymentDetails: {
@@ -174,6 +186,27 @@ export default function CheckoutPage() {
       <div className="grid gap-6 md:grid-cols-3">
         {/* Left Column: Order Items & Special Requests */}
         <div className="md:col-span-2 space-y-6">
+          {/* Table Number Required Card */}
+          <Card className="border-amber-500/40 bg-zinc-900/90 shadow-lg">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-bold flex items-center gap-2 text-amber-400">
+                <Utensils className="h-4 w-4" />
+                Table Number <span className="text-red-400">*</span>
+              </CardTitle>
+              <CardDescription className="text-xs text-zinc-400">
+                Enter your assigned dining table number for instant kitchen & server delivery.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Input
+                placeholder="e.g. Table 4 (Mandatory to place order)"
+                value={tableNumber}
+                onChange={(e) => setTableNumber(e.target.value)}
+                className="bg-zinc-950 border-amber-500/50 text-base font-bold text-amber-300 placeholder:text-zinc-600 focus-visible:ring-amber-500 py-5"
+              />
+            </CardContent>
+          </Card>
+
           <Card className="border-zinc-800 bg-zinc-900/70 shadow-lg">
             <CardHeader className="pb-3 border-b border-zinc-800">
               <CardTitle className="text-base font-bold flex items-center gap-2 text-zinc-100">

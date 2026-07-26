@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState, useMemo } from 'react'
-import { Search, Plus, Minus, ShoppingBag, Utensils, AlertCircle, SlidersHorizontal, Leaf, CircleDollarSign } from 'lucide-react'
+import { Search, Plus, Minus, ShoppingBag, Utensils, AlertCircle, SlidersHorizontal, Leaf, IndianRupee } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { LUFT_MENU_ITEMS } from '@/lib/luftMenuData'
 import { useCart } from '@/context/CartContext'
@@ -24,7 +24,7 @@ export interface MenuItem {
 }
 
 const DEFAULT_CATEGORIES = ['All', 'Main', 'Appetizer', 'Beverages', 'Side']
-const DIETARY_OPTIONS = ['All', 'Veg', 'Non-Veg']
+const DIETARY_OPTIONS = ['All', 'Veg', 'Non-Veg', 'Vegan', 'Gluten-Free']
 
 function formatPrice(value: number | null | undefined) {
   return `₹${Number(value || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`
@@ -247,7 +247,7 @@ export default function MenuPage() {
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           <label className="space-y-2 text-sm text-zinc-300">
-            <span className="flex items-center gap-2"><CircleDollarSign className="h-4 w-4 text-amber-400" />Price up to</span>
+            <span className="flex items-center gap-2"><IndianRupee className="h-4 w-4 text-amber-400" />Price up to</span>
             <select
               value={priceRange}
               onChange={(e) => setPriceRange(e.target.value)}
@@ -399,6 +399,27 @@ export default function MenuPage() {
                   <p className="text-xs text-zinc-400 leading-relaxed line-clamp-3 min-h-[2.5rem]">
                     {item.description || 'No description available for this dish.'}
                   </p>
+
+                  {/* Dietary Preference Badges */}
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {tags.map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant="outline"
+                        className={`text-[10px] uppercase font-bold px-2 py-0.5 ${
+                          tag === 'non-veg'
+                            ? 'border-red-500/40 text-red-400 bg-red-950/20'
+                            : tag === 'veg'
+                            ? 'border-emerald-500/40 text-emerald-400 bg-emerald-950/20'
+                            : tag === 'vegan'
+                            ? 'border-lime-500/40 text-lime-400 bg-lime-950/20'
+                            : 'border-amber-500/40 text-amber-300 bg-amber-950/20'
+                        }`}
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Card Footer with Price and Action Button */}

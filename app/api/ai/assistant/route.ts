@@ -10,12 +10,29 @@ interface AssistantPayload {
   context: 'customer' | 'manager'
 }
 
-function buildFallbackResponse(context: AssistantPayload['context'], data: { menuItems: string; managerSummary: string }) {
+function buildFallbackResponse(context: AssistantPayload['context'], prompt: string, data: { managerSummary: string }) {
   if (context === 'manager') {
-    return `Manager insights summary:\n${data.managerSummary}\n\nSuggested action: review low-stock or slow-moving dishes and keep an eye on pacing during the next peak window.`
+    return `📊 **Operational Summary & Manager Pacing**:\n• Peak floor activity anticipated during evening service.\n• Kitchen stations operational.\n• Floor Status:\n${data.managerSummary || 'Normal order volume.'}`
   }
 
-  return `Here’s a customer-friendly recommendation prompt based on the current menu:\n${data.menuItems}\n\nTry a dish that fits the guest’s preferences and budget, and mention any dietary needs clearly.`
+  const query = (prompt || '').toLowerCase()
+  let matches = LUFT_MENU_ITEMS.filter((i) => {
+    const text = `${i.name} ${i.description || ''} ${i.category}`.toLowerCase()
+    if (query.includes('veg') && !query.includes('non-veg')) return !text.includes('chicken') && !text.includes('mutton') && !text.includes('prawn') && !text.includes('fish')
+    if (query.includes('non-veg') || query.includes('chicken') || query.includes('meat')) return text.includes('chicken') || text.includes('mutton') || text.includes('prawn') || text.includes('fish')
+    if (query.includes('spicy')) return text.includes('chili') || text.includes('spicy') || text.includes('habanero') || text.includes('tacos')
+    if (query.includes('sweet') || query.includes('dessert')) return i.category === 'Dessert'
+    if (query.includes('drink') || query.includes('beverage') || query.includes('coffee') || query.includes('tea')) return i.category === 'Beverages'
+    return true
+  }).slice(0, 3)
+
+  if (matches.length === 0) matches = LUFT_MENU_ITEMS.slice(0, 3)
+
+  const itemsFormatted = matches
+    .map((m) => `• **${m.name}** (₹${m.price}) — *${m.category}*\n  ${m.description || 'Royal signature dish'}`)
+    .join('\n\n')
+
+  return `✨ **Royal Culinary Concierge Recommendation**:\n\n${itemsFormatted}\n\nAll items listed are available on our menu. Enjoy your dining experience!`
 }
 
 export async function POST(request: Request) {
@@ -116,8 +133,7 @@ ${menuContext}`
 
   if (!apiKey) {
     return NextResponse.json({
-      response: buildFallbackResponse(context, {
-        menuItems: menuContext || 'No active items available.',
+      response: buildFallbackResponse(context, prompt, {
         managerSummary: managerContext,
       }),
     })
@@ -142,8 +158,7 @@ ${menuContext}`
   } catch (error: any) {
     console.error('Gemini API call failed:', error?.message || error)
     return NextResponse.json({
-      response: buildFallbackResponse(context, {
-        menuItems: menuContext || 'No active items available.',
+      response: buildFallbackResponse(context, prompt, {
         managerSummary: managerContext,
       }),
       debugError: String(error?.message || error)

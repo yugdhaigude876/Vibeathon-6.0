@@ -6,7 +6,8 @@ import { LUFT_MENU_ITEMS } from '@/lib/luftMenuData'
 
 export async function POST(request: Request) {
   try {
-    const { items, notes, paymentMethod, paymentDetails } = await request.json()
+    const { items, notes, paymentMethod, paymentDetails, table_number, tableNumber } = await request.json()
+    const tableNum = String(table_number || tableNumber || '').trim()
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: 'Missing or invalid items array' }, { status: 400 })
@@ -142,7 +143,7 @@ export async function POST(request: Request) {
     // Format payment info into notes
     const pMethod = String(paymentMethod || 'Cash').toUpperCase()
     const pInfo = paymentMethod === 'card' ? `[Payment: CARD (Paid - ${paymentDetails?.brand || 'VISA'} ****${paymentDetails?.last4 || '4242'})]` : `[Payment: CASH ON DELIVERY (Pending)]`
-    const combinedNotes = [pInfo, notes?.trim()].filter(Boolean).join(' | ')
+    const combinedNotes = [`[Table: ${tableNum || 'N/A'}]`, pInfo, notes?.trim()].filter(Boolean).join(' | ')
 
     // ── Insert into orders table ─────────────────────────────────────────────
     const { data: order, error: orderError } = await supabase
@@ -153,6 +154,7 @@ export async function POST(request: Request) {
         status: 'pending',
         total_amount: finalTotal,
         notes: combinedNotes,
+        table_number: tableNum || null,
       })
       .select()
       .single()
@@ -167,6 +169,7 @@ export async function POST(request: Request) {
           total_amount: finalTotal,
           status: 'pending',
           notes: combinedNotes,
+          table_number: tableNum || null,
         })
         .select()
         .single()
