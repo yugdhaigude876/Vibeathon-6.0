@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Toaster } from '@/components/ui/toaster'
 import { useToast } from '@/hooks/use-toast'
-import { ShieldCheck, UserCheck } from 'lucide-react'
+import { ShieldCheck, Sparkles, UserCheck } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -136,33 +136,80 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8 sm:px-6">
+    <div className="relative flex min-h-screen w-full flex-col lg:flex-row bg-zinc-950 text-zinc-100 selection:bg-amber-500 selection:text-zinc-950 overflow-hidden">
       <Toaster />
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold tracking-tight">PLATR Portal</CardTitle>
-          <CardDescription>Select your account type to sign in</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="customer" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="customer" className="flex items-center gap-2">
-                <UserCheck className="h-4 w-4" />
-                Customer
-              </TabsTrigger>
-              <TabsTrigger value="staff" className="flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4" />
-                Staff & Manager
-              </TabsTrigger>
-            </TabsList>
 
-            {/* CUSTOMER AUTHENTICATION TAB */}
-            <TabsContent value="customer">
-              <div className="flex flex-col gap-4">
+      {/* Decorative Background Orbs */}
+      <div className="pointer-events-none absolute -top-40 -left-40 h-96 w-96 rounded-full bg-amber-500/10 blur-[128px]" />
+      <div className="pointer-events-none absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-amber-600/10 blur-[128px]" />
+
+      {/* Left Branding / Hero Side (Visible on large screens) */}
+      <div className="relative hidden lg:flex lg:w-1/2 flex-col justify-between p-12 border-r border-zinc-900 bg-gradient-to-b from-zinc-900/50 to-zinc-950">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500 font-black text-zinc-950 text-xl shadow-lg shadow-amber-500/20">
+            P
+          </div>
+          <span className="text-xl font-bold tracking-wider text-zinc-50 uppercase">PLATR</span>
+        </div>
+
+        <div className="my-auto space-y-6 max-w-lg">
+          <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-400">
+            <Sparkles className="h-3.5 w-3.5" />
+            Vibeathon 6.0 Experience
+          </div>
+          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl text-zinc-50 leading-[1.15]">
+            Seamless dining, <span className="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">effortless management.</span>
+          </h1>
+          <p className="text-zinc-400 text-base leading-relaxed">
+            Welcome to PLATR — the modern culinary OS for instant digital ordering, live table management, and AI-driven kitchen operations.
+          </p>
+        </div>
+
+        <div className="flex items-center justify-between text-xs text-zinc-500 border-t border-zinc-900 pt-6">
+          <span>© 2026 PLATR Inc.</span>
+          <span>Crafted for Vibeathon</span>
+        </div>
+      </div>
+
+      {/* Right Form Side */}
+      <div className="flex flex-1 items-center justify-center p-6 sm:p-12 z-10">
+        <Card className="w-full max-w-md border-zinc-800/80 bg-zinc-900/80 shadow-2xl backdrop-blur-xl rounded-2xl">
+          <CardHeader className="space-y-2 text-center pb-4">
+            {/* Mobile Logo Branding */}
+            <div className="flex lg:hidden items-center justify-center gap-2 mb-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500 font-black text-zinc-950 text-base">
+                P
+              </div>
+              <span className="text-lg font-bold tracking-wider text-zinc-50 uppercase">PLATR</span>
+            </div>
+            <CardTitle className="text-2xl font-bold tracking-tight text-zinc-50">Welcome Back</CardTitle>
+            <CardDescription className="text-zinc-400 text-sm">Select your portal role to log in</CardDescription>
+          </CardHeader>
+
+          <CardContent className="space-y-6">
+            <Tabs defaultValue="customer" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-6 bg-zinc-950/80 p-1 border border-zinc-800 rounded-xl">
+                <TabsTrigger
+                  value="customer"
+                  className="flex items-center justify-center gap-2 rounded-lg py-2.5 text-xs font-semibold data-[state=active]:bg-amber-500 data-[state=active]:text-zinc-950 text-zinc-400 transition-all"
+                >
+                  <UserCheck className="h-4 w-4" />
+                  Customer
+                </TabsTrigger>
+                <TabsTrigger
+                  value="staff"
+                  className="flex items-center justify-center gap-2 rounded-lg py-2.5 text-xs font-semibold data-[state=active]:bg-amber-500 data-[state=active]:text-zinc-950 text-zinc-400 transition-all"
+                >
+                  <ShieldCheck className="h-4 w-4" />
+                  Staff & Manager
+                </TabsTrigger>
+              </TabsList>
+
+              {/* CUSTOMER TAB */}
+              <TabsContent value="customer" className="space-y-5 focus-visible:outline-none">
                 <Button
                   type="button"
-                  variant="outline"
-                  className="w-full h-11 flex items-center justify-center gap-2 border-slate-300 bg-white text-slate-900 font-medium hover:bg-slate-100 hover:text-slate-900"
+                  className="w-full h-11 flex items-center justify-center gap-3 border border-zinc-700 bg-white text-zinc-950 font-bold hover:bg-zinc-100 transition-all rounded-xl shadow-md"
                   disabled={loading}
                   onClick={handleGoogleSignIn}
                 >
@@ -184,22 +231,22 @@ export default function LoginPage() {
                       fill="#EA4335"
                     />
                   </svg>
-                  {loading ? 'Redirecting...' : 'Continue with Google'}
+                  {loading ? 'Connecting...' : 'Continue with Google'}
                 </Button>
 
-                <div className="relative my-2">
+                <div className="relative my-4">
                   <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
+                    <span className="w-full border-t border-zinc-800" />
                   </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">Or sign in with email</span>
+                  <div className="relative flex justify-center text-[10px] uppercase tracking-widest font-semibold">
+                    <span className="bg-zinc-900 px-3 text-zinc-500">Or sign in with email</span>
                   </div>
                 </div>
 
-                <form onSubmit={handleCustomerSignIn} className="flex flex-col gap-3">
-                  <div className="flex flex-col gap-1.5">
-                    <label htmlFor="customer-email" className="text-sm font-medium">
-                      Email address
+                <form onSubmit={handleCustomerSignIn} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label htmlFor="customer-email" className="text-xs font-semibold text-zinc-300">
+                      Email Address
                     </label>
                     <Input
                       id="customer-email"
@@ -210,11 +257,12 @@ export default function LoginPage() {
                       required
                       disabled={loading}
                       autoComplete="email"
+                      className="bg-zinc-950/80 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 rounded-xl h-11 focus:border-amber-500 focus:ring-amber-500"
                     />
                   </div>
 
-                  <div className="flex flex-col gap-1.5">
-                    <label htmlFor="customer-password" className="text-sm font-medium">
+                  <div className="space-y-1.5">
+                    <label htmlFor="customer-password" className="text-xs font-semibold text-zinc-300">
                       Password
                     </label>
                     <Input
@@ -226,70 +274,82 @@ export default function LoginPage() {
                       required
                       disabled={loading}
                       autoComplete="current-password"
+                      className="bg-zinc-950/80 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 rounded-xl h-11 focus:border-amber-500 focus:ring-amber-500"
                     />
                   </div>
 
-                  <Button type="submit" className="w-full mt-2" disabled={loading}>
+                  <Button
+                    type="submit"
+                    className="w-full h-11 mt-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold rounded-xl transition-all shadow-lg shadow-amber-500/20"
+                    disabled={loading}
+                  >
                     {loading ? 'Signing in...' : 'Sign In as Customer'}
                   </Button>
                 </form>
 
-                <p className="text-center text-sm text-muted-foreground mt-2">
+                <p className="text-center text-xs text-zinc-400 mt-3">
                   New customer?{' '}
-                  <Link href="/signup" className="font-medium text-primary underline-offset-4 hover:underline">
+                  <Link href="/signup" className="font-semibold text-amber-400 hover:text-amber-300 underline-offset-4 hover:underline">
                     Create an account
                   </Link>
                 </p>
-              </div>
-            </TabsContent>
+              </TabsContent>
 
-            {/* STAFF & MANAGEMENT AUTHENTICATION TAB */}
-            <TabsContent value="staff">
-              <form onSubmit={handleStaffSignIn} className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="staff-id" className="text-sm font-medium">
-                    Staff ID / Official Email
-                  </label>
-                  <Input
-                    id="staff-id"
-                    type="text"
-                    placeholder="e.g. STF-1024 or staff@platr.com"
-                    value={staffId}
-                    onChange={(e) => setStaffId(e.target.value)}
-                    required
+              {/* STAFF & MANAGEMENT TAB */}
+              <TabsContent value="staff" className="space-y-4 focus-visible:outline-none">
+                <form onSubmit={handleStaffSignIn} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label htmlFor="staff-id" className="text-xs font-semibold text-zinc-300">
+                      Staff ID or Official Email
+                    </label>
+                    <Input
+                      id="staff-id"
+                      type="text"
+                      placeholder="e.g. STF-1024 or staff@platr.com"
+                      value={staffId}
+                      onChange={(e) => setStaffId(e.target.value)}
+                      required
+                      disabled={loading}
+                      className="bg-zinc-950/80 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 rounded-xl h-11 focus:border-amber-500 focus:ring-amber-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label htmlFor="staff-password" className="text-xs font-semibold text-zinc-300">
+                      Password
+                    </label>
+                    <Input
+                      id="staff-password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={staffPassword}
+                      onChange={(e) => setStaffPassword(e.target.value)}
+                      required
+                      disabled={loading}
+                      autoComplete="current-password"
+                      className="bg-zinc-950/80 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 rounded-xl h-11 focus:border-amber-500 focus:ring-amber-500"
+                    />
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full h-11 mt-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold rounded-xl transition-all shadow-lg shadow-amber-500/20"
                     disabled={loading}
-                  />
-                </div>
+                  >
+                    {loading ? 'Authenticating...' : 'Sign In to Portal'}
+                  </Button>
 
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="staff-password" className="text-sm font-medium">
-                    Password
-                  </label>
-                  <Input
-                    id="staff-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={staffPassword}
-                    onChange={(e) => setStaffPassword(e.target.value)}
-                    required
-                    disabled={loading}
-                    autoComplete="current-password"
-                  />
-                </div>
-
-                <Button type="submit" className="w-full mt-2" disabled={loading}>
-                  {loading ? 'Authenticating...' : 'Sign In to Portal'}
-                </Button>
-
-                <p className="text-center text-xs text-muted-foreground mt-1">
-                  Protected portal for authorized restaurant staff & management.
-                </p>
-              </form>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+                  <div className="rounded-xl border border-zinc-800/80 bg-zinc-950/50 p-3 text-center">
+                    <p className="text-[11px] text-zinc-400 leading-relaxed">
+                      Protected portal for authorized restaurant staff & management.
+                    </p>
+                  </div>
+                </form>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
-
