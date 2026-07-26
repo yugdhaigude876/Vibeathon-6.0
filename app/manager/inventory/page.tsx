@@ -76,8 +76,8 @@ export default function ManagerInventoryPage() {
         name: i.name,
         category: i.category || 'General',
         price: Number(i.price || 0),
-        stock_level: i.stock_level ?? 18,
-        reorder_level: i.reorder_level ?? 10,
+        stock_level: (i as any).stock_level ?? 18,
+        reorder_level: (i as any).reorder_level ?? 10,
         is_available: i.is_available ?? true,
       }))
     }

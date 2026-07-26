@@ -20,7 +20,7 @@ import { createClient } from '@/lib/supabase'
 import { useRoleGuard } from '@/hooks/useRoleGuard'
 import { useRealtimeOrders } from '@/lib/supabaseHooks'
 import { useToast } from '@/hooks/use-toast'
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 
@@ -358,7 +358,7 @@ export default function KitchenPage() {
                     </CardContent>
 
                     {/* Action Footer */}
-                    <CardFooter className="p-4 pt-2 border-t border-zinc-800 bg-zinc-950/40">
+                    <div className="p-4 pt-2 border-t border-zinc-800 bg-zinc-950/40">
                       {order.status === 'pending' ? (
                         <Button
                           onClick={() => handleUpdateStatus(order.id, 'preparing')}
@@ -390,7 +390,7 @@ export default function KitchenPage() {
                           )}
                         </Button>
                       )}
-                    </CardFooter>
+                    </div>
                   </Card>
                 )
               })}
@@ -452,7 +452,7 @@ export default function KitchenPage() {
                       ))}
                     </CardContent>
 
-                    <CardFooter className="p-3.5 pt-0">
+                    <div className="p-3.5 pt-0">
                       <Button
                         onClick={() => handleUpdateStatus(order.id, 'completed')}
                         disabled={updatingId === order.id}
@@ -468,7 +468,7 @@ export default function KitchenPage() {
                           </>
                         )}
                       </Button>
-                    </CardFooter>
+                    </div>
                   </Card>
                 )
               })}
