@@ -56,8 +56,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, profile })
   } catch (error) {
-    return NextResponse.json({
-      error: error instanceof Error ? error.message : 'Failed to create profile',
-    })
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to create profile' },
+      { status: 500 }
+    )
   }
 }
