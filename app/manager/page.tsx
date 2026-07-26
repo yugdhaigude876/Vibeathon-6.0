@@ -24,6 +24,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 
+import { useRealtimeOrders } from '@/lib/supabaseHooks'
+
 interface Profile {
   id: string
   role?: string | null
@@ -46,21 +48,23 @@ interface Order {
   notes?: string | null
   table_number?: number | string | null
   customer_name?: string | null
-  order_items?: OrderItem[] | null
+  order_items?: any[] | null
 }
 
 export default function ManagerPage() {
   const supabase = createClient()
   const { authorized, loading: authLoading } = useRoleGuard(['manager', 'staff'])
+  
+  const [realtimeOrders, ordersLoading] = useRealtimeOrders()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [orders, setOrders] = useState<Order[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loadingProfile, setLoadingProfile] = useState(true)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
 
   useEffect(() => {
     if (!authorized) return
 
-    const loadData = async () => {
+    const loadProfile = async () => {
       const {
         data: { user },
       } = await supabase.auth.getUser()
@@ -72,21 +76,20 @@ export default function ManagerPage() {
         .maybeSingle()
 
       setProfile(profileData as Profile | null)
-
-      const { data: orderData } = await supabase
-        .from('orders')
-        .select('*, order_items(*, menu_items(name))')
-        .order('created_at', { ascending: false })
-
-      if (orderData) {
-        setOrders(orderData as Order[])
-      }
-
-      setLoading(false)
+      setLoadingProfile(false)
     }
 
-    void loadData()
+    void loadProfile()
   }, [authorized, supabase])
+
+  useEffect(() => {
+    if (authorized && realtimeOrders) {
+      setOrders(realtimeOrders as any[])
+    }
+  }, [authorized, realtimeOrders])
+
+  const loading = ordersLoading || loadingProfile
+
 
   if (authLoading) {
     return (

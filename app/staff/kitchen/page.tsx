@@ -18,6 +18,9 @@ import {
 } from '@/components/ui/dialog'
 import { Switch } from '@/components/ui/switch'
 
+import { useRealtimeOrders, useRealtimeMenuItems } from '@/lib/supabaseHooks'
+import { useToast } from '@/hooks/use-toast'
+
 type OrderStatus = 'pending' | 'preparing' | 'ready' | 'completed'
 
 interface MenuItem {
@@ -39,15 +42,15 @@ interface OrderItem {
 interface Order {
   id: string
   created_at: string
-  status: OrderStatus
+  status: string
   notes?: string | null
   table_number?: number | string | null
   customer_name?: string | null
   guest_name?: string | null
-  order_items?: OrderItem[] | null
+  order_items?: any[] | null
 }
 
-const visibleStatuses: OrderStatus[] = ['pending', 'preparing', 'ready']
+const visibleStatuses: string[] = ['pending', 'preparing', 'ready', 'completed']
 
 function formatElapsedTime(createdAt: string, now: number) {
   const diffMinutes = Math.max(0, Math.floor((now - new Date(createdAt).getTime()) / 60000))
@@ -68,94 +71,77 @@ function formatElapsedTime(createdAt: string, now: number) {
 
 export default function KitchenPage() {
   const supabase = createClient()
+  const { toast } = useToast()
+
+  const { authorized, loading: authLoading } = useRoleGuard(['staff', 'manager'])
+
+  const [realtimeOrders, ordersLoading] = useRealtimeOrders()
+  const [realtimeMenuItems, itemsLoading] = useRealtimeMenuItems()
+
   const [orders, setOrders] = useState<Order[]>([])
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
-  const [loading, setLoading] = useState(true)
   const [now, setNow] = useState(() => Date.now())
   const [isAvailabilityOpen, setIsAvailabilityOpen] = useState(false)
 
-  const fetchOrders = async () => {
-    const { data } = await supabase
-      .from('orders')
-      .select('*, order_items(*, menu_items(name, is_available))')
-      .in('status', visibleStatuses)
-      .order('created_at', { ascending: true })
-
-    if (data) {
-      setOrders(data as Order[])
-    }
-  }
-
-  const fetchMenuItems = async () => {
-    const { data } = await supabase.from('menu_items').select('*').order('name', { ascending: true })
-
-    if (data) {
-      setMenuItems(data as MenuItem[])
-    }
-  }
-
-  const { authorized, loading: authLoading } = useRoleGuard(['staff', 'manager'])
+  // Track the previous length of orders to notify on new order
+  const [prevOrdersLength, setPrevOrdersLength] = useState<number | null>(null)
 
   useEffect(() => {
     if (!authorized) return
 
-    let isMounted = true
+    // Filter visible statuses and sort by created_at ascending (oldest first)
+    const filtered = realtimeOrders
+      .filter((o) => visibleStatuses.includes(o.status))
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+    
+    setOrders(filtered)
 
-    const loadData = async () => {
-      setLoading(true)
-      await Promise.all([fetchOrders(), fetchMenuItems()])
-      if (!isMounted) return
-      setLoading(false)
+    // Notify on new order
+    if (prevOrdersLength !== null && realtimeOrders.length > prevOrdersLength) {
+      toast({
+        title: 'New Order Arrived! 🔔',
+        description: 'A new order has been submitted to the kitchen.',
+      })
     }
+    setPrevOrdersLength(realtimeOrders.length)
+  }, [realtimeOrders, prevOrdersLength, toast, authorized])
 
-    void loadData()
+  useEffect(() => {
+    if (authorized) {
+      setMenuItems(realtimeMenuItems)
+    }
+  }, [realtimeMenuItems, authorized])
 
+  useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 30000)
+    return () => window.clearInterval(timer)
+  }, [])
 
-    const channel = supabase.channel('kds-orders')
-
-    channel.on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'orders' },
-      () => {
-        void fetchOrders()
-      }
-    )
-
-    channel.on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'menu_items' },
-      () => {
-        void fetchMenuItems()
-      }
-    )
-
-    channel.subscribe()
-
-    return () => {
-      isMounted = false
-      window.clearInterval(timer)
-      supabase.removeChannel(channel)
-    }
-  }, [router, supabase])
+  const loading = ordersLoading || itemsLoading
 
   const groupedOrders = useMemo(() => {
     return {
-      pending: orders.filter((order) => order.status === 'pending'),
-      preparing: orders.filter((order) => order.status === 'preparing'),
-      ready: orders.filter((order) => order.status === 'ready'),
+      inProgress: orders.filter((order) => order.status === 'pending' || order.status === 'preparing'),
+      completed: orders.filter((order) => order.status === 'ready' || order.status === 'completed'),
     }
   }, [orders])
 
-  const updateOrderStatus = async (orderId: string, nextStatus: OrderStatus) => {
+  const updateOrderStatus = async (orderId: string, nextStatus: string) => {
     const { error } = await supabase.from('orders').update({ status: nextStatus }).eq('id', orderId)
 
     if (error) {
       console.error('Failed to update order status:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to update order status. Please try again.',
+      })
       return
     }
 
-    setOrders((current) => current.map((order) => (order.id === orderId ? { ...order, status: nextStatus } : order)))
+    toast({
+      title: 'Order Status Updated',
+      description: `Order #${orderId.slice(0, 8)} status set to ${nextStatus}.`,
+    })
   }
 
   const toggleMenuItemAvailability = async (itemId: string, nextValue: boolean) => {
@@ -163,11 +149,19 @@ export default function KitchenPage() {
 
     if (error) {
       console.error('Failed to update menu item availability:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to update availability. Please try again.',
+      })
       return
     }
 
-    setMenuItems((current) => current.map((item) => (item.id === itemId ? { ...item, is_available: nextValue } : item)))
+    toast({
+      title: 'Availability Updated',
+      description: `Dishes updated successfully.`,
+    })
   }
+
 
   const renderOrderCard = (order: Order) => {
     const summaryLabel = order.table_number ?? order.customer_name ?? order.guest_name ?? 'Walk-in'
@@ -303,38 +297,35 @@ export default function KitchenPage() {
             Loading kitchen board...
           </div>
         ) : (
-          <div className="grid gap-6 lg:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-4">
               <div className="flex items-center justify-between rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3">
                 <div>
-                  <p className="text-sm font-semibold text-amber-300">Pending</p>
-                  <p className="text-xs text-amber-200/80">New orders waiting for prep</p>
+                  <p className="text-sm font-semibold text-amber-300">In Progress</p>
+                  <p className="text-xs text-amber-200/80">Pending & Preparing orders</p>
                 </div>
-                <Badge className="border-amber-500/20 bg-amber-500/20 text-amber-100">{groupedOrders.pending.length}</Badge>
+                <Badge className="border-amber-500/20 bg-amber-500/20 text-amber-100">
+                  {groupedOrders.inProgress.length}
+                </Badge>
               </div>
-              <div className="space-y-4">{groupedOrders.pending.map(renderOrderCard)}</div>
+              <div className="space-y-4">
+                {groupedOrders.inProgress.map(renderOrderCard)}
+              </div>
             </div>
 
             <div className="space-y-4">
               <div className="flex items-center justify-between rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3">
                 <div>
-                  <p className="text-sm font-semibold text-emerald-300">Preparing</p>
-                  <p className="text-xs text-emerald-200/80">Orders actively being cooked</p>
+                  <p className="text-sm font-semibold text-emerald-300">Completed / Ready</p>
+                  <p className="text-xs text-emerald-200/80">Orders marked ready or completed today</p>
                 </div>
-                <Badge className="border-emerald-500/20 bg-emerald-500/20 text-emerald-100">{groupedOrders.preparing.length}</Badge>
+                <Badge className="border-emerald-500/20 bg-emerald-500/20 text-emerald-100">
+                  {groupedOrders.completed.length}
+                </Badge>
               </div>
-              <div className="space-y-4">{groupedOrders.preparing.map(renderOrderCard)}</div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between rounded-2xl border border-sky-500/20 bg-sky-500/10 px-4 py-3">
-                <div>
-                  <p className="text-sm font-semibold text-sky-300">Ready</p>
-                  <p className="text-xs text-sky-200/80">Ready for pickup or delivery</p>
-                </div>
-                <Badge className="border-sky-500/20 bg-sky-500/20 text-sky-100">{groupedOrders.ready.length}</Badge>
+              <div className="space-y-4">
+                {groupedOrders.completed.map(renderOrderCard)}
               </div>
-              <div className="space-y-4">{groupedOrders.ready.map(renderOrderCard)}</div>
             </div>
           </div>
         )}
