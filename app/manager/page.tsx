@@ -467,7 +467,7 @@ export default function ManagerPage() {
                           {res.reservation_date || 'Today'} • {res.reservation_time}
                         </TableCell>
                         <TableCell className="text-xs font-semibold text-zinc-200">
-                          {res.name || 'Valued Guest'}
+                          {(res as any).name || (res as any).guest_name || 'Valued Guest'}
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className="text-xs border-amber-500/30 text-amber-300">
@@ -475,7 +475,7 @@ export default function ManagerPage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-xs font-mono text-zinc-400">
-                          {res.phone || '+91 98765 43210'}
+                          {(res as any).phone || '+91 98765 43210'}
                         </TableCell>
                         <TableCell>
                           <Badge
