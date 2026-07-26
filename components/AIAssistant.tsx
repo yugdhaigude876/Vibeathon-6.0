@@ -42,7 +42,7 @@ export function AIAssistant({ role }: AIAssistantProps) {
     {
       id: 1,
       role: 'assistant',
-      content: 'Hi! I can help with dish ideas or manager insights. Ask me anything about the menu or the floor.',
+      content: 'Hi! I am your PLATR AI Concierge. Ask me anything about our official Luft Menu or dining recommendations!',
     },
   ])
   const [loading, setLoading] = useState(false)
