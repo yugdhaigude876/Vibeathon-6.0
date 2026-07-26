@@ -24,9 +24,9 @@ interface AIAssistantProps {
 }
 
 const customerSuggestions = [
-  'Recommend something spicy under ₹250',
-  'What should I order if I am vegetarian?',
-  'Suggest a shareable dish for two',
+  'Recommend something spicy from Asian Tapas',
+  'What are the best vegetarian dishes under ₹600?',
+  'Suggest a pairing for Butter Chicken Tacos',
 ]
 
 const managerSuggestions = [

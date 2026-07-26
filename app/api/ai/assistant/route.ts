@@ -113,11 +113,17 @@ export async function POST(request: Request) {
     console.error('Assistant context fetch failed:', error)
   }
 
-  // Ensure full Luft menu items are always present in the AI assistant context
-  const fullMenuItemsList = [
-    ...LUFT_MENU_ITEMS.map((item) => `${item.name} — ₹${item.price} | ${item.category} | ${item.description || 'Signature dish'}`),
-    ...menuItems.map((item) => `${item.name} — ₹${Number(item.price ?? 0).toFixed(0)} | ${item.category ?? 'General'} | ${item.description ?? 'Available today'}`)
-  ]
+  // Ensure full Luft menu items are always present in the AI assistant context with dietary tags
+  const fullMenuItemsList = LUFT_MENU_ITEMS.map((item) => {
+    const isNonVeg = [
+      'chicken', 'mutton', 'lamb', 'fish', 'prawn', 'shrimp', 'crab', 'seafood',
+      'beef', 'pepperoni', 'meat', 'chili con carne', 'bacon', 'kebab', 'salmon',
+      'squid', 'carne chicken', 'barba"cola"', 'mob pizza', 'kani', 'keftades'
+    ].some((kw) => `${item.name} ${item.description || ''}`.toLowerCase().includes(kw))
+    
+    const tag = isNonVeg ? 'Non-Veg🔴' : 'Veg🟢'
+    return `${item.name} — ₹${item.price} | Category: ${item.category} | ${tag} | Description: ${item.description || 'Signature dish'}`
+  })
 
   const menuContext = Array.from(new Set(fullMenuItemsList)).join('\n')
 
@@ -125,13 +131,17 @@ export async function POST(request: Request) {
 
   const systemContext = context === 'manager'
     ? `You are PLATR's restaurant manager assistant. Answer using the operational summary provided. Be extremely concise, crisp, and actionable. Limit responses to 2-3 bullet points or short paragraphs.\n\nOperational summary:\n${managerContext}`
-    : `You are PLATR's gourmet dining concierge assistant. STRICT RULES:
-1. ONLY recommend items that exist in our official restaurant menu listed below.
-2. Be direct, warm, concise, and helpful (keep answers under 3-4 sentences).
-3. Always include exact dish name, category, price in INR (₹), and dietary type (Veg or Non-Veg).
-4. If a guest asks for food suggestions based on mood, budget, or spice level, pick 2-3 best matching dishes directly from our menu.
+    : `You are PLATR's official Gourmet Dining Concierge for "Luft Ka Menu".
 
-OFFICIAL RESTAURANT MENU:
+STRICT RULES & CONSTRAINTS:
+1. ONLY recommend dishes that exist in the official menu listed below. NEVER invent or hallucinate items not present in the menu.
+2. Prices are strictly in Indian Rupees (₹). Never use $ or other currency symbols.
+3. Clearly state whether each recommended dish is Vegetarian (Veg🟢) or Non-Vegetarian (Non-Veg🔴).
+4. Categories available: Soup, Salads, Chip N Dip, Signature Tapas, Tacos & Tostadas, Asian Tapas, Dimsum, Sushi, Pinchos, Indian Tapas, Charcoal Plates, Pizzaz Pizza, Grande Plates, Burrito Bowls, Paella & Risotto, Asian Bowls, Biryani, Mains, Sides, Dessert.
+5. When a guest asks for suggestions based on mood, spice level, budget, or pairings, select 2-3 matching items directly from our menu and describe why they complement each other.
+6. Maintain a warm, polite, and royal dining concierge tone. Keep answers concise and well-formatted with markdown bullets.
+
+OFFICIAL LUFT MENU DATASET:
 ${menuContext}`
 
   const apiKey = process.env.GEMINI_API_KEY
