@@ -15,6 +15,7 @@ import {
   Bell,
   Utensils,
   CheckCheck,
+  Loader2,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { useRoleGuard } from '@/hooks/useRoleGuard'
@@ -290,9 +291,9 @@ export default function KitchenPage() {
                           <span className="text-xl font-black font-mono text-zinc-50">
                             #{order.id.slice(0, 8)}
                           </span>
-                          {order.table_number && (
+                          {(order as any).table_number && (
                             <Badge variant="outline" className="border-amber-500/30 text-amber-300 text-xs font-bold">
-                              Table {order.table_number}
+                              Table {(order as any).table_number}
                             </Badge>
                           )}
                         </div>
@@ -440,7 +441,7 @@ export default function KitchenPage() {
                         <span className={`font-semibold ${isStaleReady ? 'text-amber-400' : 'text-zinc-400'}`}>
                           Ready {elapsed.text}
                         </span>
-                        <span>{order.table_number ? `Table ${order.table_number}` : 'Walk-in'}</span>
+                        <span>{(order as any).table_number ? `Table ${(order as any).table_number}` : 'Walk-in'}</span>
                       </div>
                     </CardHeader>
 

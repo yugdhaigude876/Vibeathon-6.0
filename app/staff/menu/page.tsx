@@ -66,7 +66,7 @@ export default function StaffMenuPage() {
         price: Number(item.price || 0),
         category: item.category || 'General',
         is_available: item.is_available ?? true,
-        stock_level: item.stock_level ?? 25,
+        stock_level: (item as any).stock_level ?? 25,
       }))
     }
 
