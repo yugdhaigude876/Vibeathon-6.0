@@ -150,16 +150,18 @@ export function MenuClient({ initialItems }: { initialItems?: MenuItem[] }) {
       </div>
 
       <Tabs defaultValue="All" value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
-        <TabsList className="flex w-full justify-start overflow-x-auto no-scrollbar gap-2 rounded-2xl bg-zinc-900/90 p-2 border border-zinc-800">
+        <TabsList className="flex h-auto w-full max-w-full justify-start overflow-x-auto touch-pan-x gap-2 rounded-2xl bg-zinc-900/90 p-2.5 border border-zinc-800 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
           {categories.map((category) => (
             <TabsTrigger
               key={category}
               value={category}
-              className="shrink-0 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition-all data-[state=active]:bg-amber-500 data-[state=active]:text-zinc-950 text-zinc-300"
+              className="shrink-0 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition-all data-[state=active]:bg-amber-500 data-[state=active]:text-zinc-950 text-zinc-300 hover:bg-zinc-800"
             >
               {category}
             </TabsTrigger>
           ))}
+          {/* Spacer to ensure the last category tab is fully visible and scrollable */}
+          <div className="w-4 shrink-0" />
         </TabsList>
       </Tabs>
 
