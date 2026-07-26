@@ -3,7 +3,8 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 const CUSTOMER_ONLY_ROUTES = ['/menu', '/orders', '/reservations']
 const AUTHENTICATED_ROUTES = ['/dashboard']
-const STAFF_MANAGER_ROUTES = ['/staff', '/manager']
+const STAFF_MANAGER_ROUTES = ['/staff']
+const MANAGER_ONLY_ROUTES = ['/manager']
 const PUBLIC_ROUTES = ['/login', '/signup']
 
 function isPublicRoute(pathname: string) {
@@ -20,6 +21,10 @@ function isAuthenticatedRoute(pathname: string) {
 
 function isStaffOrManagerRoute(pathname: string) {
   return STAFF_MANAGER_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))
+}
+
+function isManagerOnlyRoute(pathname: string) {
+  return MANAGER_ONLY_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))
 }
 
 function getDefaultRedirect(role: string) {
@@ -108,6 +113,18 @@ export async function middleware(req: NextRequest) {
 
   if (isStaffOrManagerRoute(pathname)) {
     if (role !== 'staff' && role !== 'manager' && role !== 'admin') {
+      const redirectUrl = req.nextUrl.clone()
+      redirectUrl.pathname = '/dashboard'
+      redirectUrl.searchParams.set('unauthorized', '1')
+      return NextResponse.redirect(redirectUrl)
+    }
+
+    return response
+  }
+
+  // MANAGER_ONLY_ROUTES: only managers may access (not staff, not customers)
+  if (isManagerOnlyRoute(pathname)) {
+    if (role !== 'manager' && role !== 'admin') {
       const redirectUrl = req.nextUrl.clone()
       redirectUrl.pathname = '/dashboard'
       redirectUrl.searchParams.set('unauthorized', '1')
