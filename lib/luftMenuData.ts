@@ -32,8 +32,8 @@ export const LUFT_MENU_ITEMS: LuftMenuItem[] = [
   { name: 'Chicken Fajita Springrolls', description: 'Grilled chicken and peppers rolled in spring rolls and crisp fried', price: 570, category: 'Signature Tapas', is_available: true },
   { name: 'Baked Keftades', description: 'Lamb meat balls baked with tomatoes, spices and cheese', price: 660, category: 'Signature Tapas', is_available: true },
   { name: 'Frito Misto', description: 'Crisp fried seafood, mushroom & vegetables served with tartare sauce', price: 720, category: 'Signature Tapas', is_available: true },
-  { name: 'Butter Baked Jacket Potatoes (Corn & Chili)', description: 'Baked jacket potatoes topped with corn and chili', price: 490, category: 'Signature Tapas', is_available: true },
-  { name: 'Butter Baked Jacket Potatoes (Chicken Mince)', description: 'Baked jacket potatoes topped with chicken mince and pepper', price: 510, category: 'Signature Tapas', is_available: true },
+  { name: 'Butter Baked Jacket Potatoes - Corn & Chili', description: 'Baked jacket potatoes topped with corn and chili', price: 490, category: 'Signature Tapas', is_available: true },
+  { name: 'Butter Baked Jacket Potatoes - Chicken Mince', description: 'Baked jacket potatoes topped with chicken mince and pepper', price: 510, category: 'Signature Tapas', is_available: true },
 
   // TACOS AND TOSTADAS
   { name: 'Loaded Avocado Taco/Tostada', description: 'Crispy fried avocado, edamame, wasabi cream, crispy spinach, Pico de Gallo', price: 460, category: 'Tacos & Tostadas', is_available: true },
