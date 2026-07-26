@@ -141,6 +141,37 @@ export default function DashboardPage() {
     }
 
     loadDashboardData()
+
+    // Real-time: refetch when a new order lands in Supabase for this user
+    let realtimeChannel: ReturnType<typeof supabase.channel> | null = null
+
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return
+      realtimeChannel = supabase
+        .channel('dashboard_orders_realtime')
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'orders', filter: `customer_id=eq.${user.id}` },
+          () => { loadDashboardData() }
+        )
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'orders', filter: `customer_id=eq.${user.id}` },
+          () => { loadDashboardData() }
+        )
+        .subscribe()
+    })
+
+    // Refetch when user returns to this tab (handles localStorage-only orders)
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') loadDashboardData()
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility)
+      if (realtimeChannel) supabase.removeChannel(realtimeChannel)
+    }
   }, [])
 
   // Stats Calculations

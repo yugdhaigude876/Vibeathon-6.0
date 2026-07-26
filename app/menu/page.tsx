@@ -39,7 +39,7 @@ function getDietaryTags(item: MenuItem): string[] {
   const nonVegKeywords = [
     'chicken', 'mutton', 'lamb', 'fish', 'prawn', 'shrimp', 'crab', 'seafood',
     'beef', 'pepperoni', 'meat', 'chili con carne', 'bacon', 'kebab', 'salmon',
-    'squid', 'carne chicken', 'barba"cola"', 'mob pizza'
+    'squid', 'carne chicken', 'barba"cola"', 'mob pizza', 'kani', 'keftades'
   ]
 
   const isNonVeg = nonVegKeywords.some((kw) => text.includes(kw))
@@ -47,13 +47,20 @@ function getDietaryTags(item: MenuItem): string[] {
     tags.push('non-veg')
   } else {
     tags.push('veg')
+    // Vegan is a subset of veg — only mark vegan if item is vegetarian
+    if (
+      text.includes('vegan') ||
+      text.includes('plant-based') ||
+      (text.includes('avocado') && !text.includes('cream')) ||
+      text.includes('edamame') ||
+      text.includes('quinoa')
+    ) {
+      tags.push('vegan')
+    }
   }
 
-  if (text.includes('vegan') || text.includes('plant') || text.includes('avocado') || text.includes('edamame') || text.includes('quinoa')) {
-    tags.push('vegan')
-  }
-
-  if (text.includes('gluten-free') || text.includes('gluten free') || text.includes('tacos') || text.includes('tostada') || text.includes('rice') || text.includes('corn')) {
+  // Gluten-free only when explicitly stated — broad keywords like 'rice'/'corn' cause false positives
+  if (text.includes('gluten-free') || text.includes('gluten free')) {
     tags.push('gluten-free')
   }
 

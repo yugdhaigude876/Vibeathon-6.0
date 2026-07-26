@@ -65,11 +65,21 @@ export async function POST(request: Request) {
       )
     }
 
-    const restaurantId =
+    let restaurantId: string | null =
       profile?.restaurant_id ||
       process.env.NEXT_PUBLIC_DEFAULT_RESTAURANT_ID ||
       process.env.DEFAULT_RESTAURANT_ID ||
-      '00000000-0000-0000-0000-000000000001'
+      null
+
+    // If we still don't have a valid restaurant_id, fetch the first restaurant from DB
+    if (!restaurantId) {
+      const { data: firstRestaurant } = await supabase
+        .from('restaurants')
+        .select('id')
+        .limit(1)
+        .maybeSingle()
+      restaurantId = firstRestaurant?.id || null
+    }
 
     // ── SECURITY: Validate menu items exist & determine server prices ─────────
     const menuItemIds = items.map((item) => item.menuItemId || item.id).filter(Boolean)
@@ -145,22 +155,25 @@ export async function POST(request: Request) {
     const pInfo = paymentMethod === 'card' ? `[Payment: CARD (Paid - ${paymentDetails?.brand || 'VISA'} ****${paymentDetails?.last4 || '4242'})]` : `[Payment: CASH ON DELIVERY (Pending)]`
     const combinedNotes = [`[Table: ${tableNum || 'N/A'}]`, pInfo, notes?.trim()].filter(Boolean).join(' | ')
 
+    // Build insert payload — only include restaurant_id when we have a real value
+    const orderPayload: Record<string, unknown> = {
+      customer_id: user.id,
+      status: 'pending',
+      total_amount: finalTotal,
+      notes: combinedNotes,
+    }
+    if (restaurantId) orderPayload.restaurant_id = restaurantId
+
     // ── Insert into orders table ─────────────────────────────────────────────
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .insert({
-        customer_id: user.id,
-        restaurant_id: restaurantId,
-        status: 'pending',
-        total_amount: finalTotal,
-        notes: combinedNotes,
-      })
+      .insert(orderPayload)
       .select()
       .single()
 
     if (orderError) {
       console.warn('Supabase primary order insert warning:', orderError.message)
-      // Retry inserting minimal required columns without restaurant_id foreign key constraint
+      // Retry without restaurant_id in case of FK constraint failure
       const { data: fbOrder, error: fbError } = await supabase
         .from('orders')
         .insert({
@@ -180,6 +193,7 @@ export async function POST(request: Request) {
 
       return NextResponse.json({ success: true, orderId: fbOrder.id })
     }
+
 
     // Prepare line items
     const orderItemsToInsert = validatedItems.map((item) => ({
