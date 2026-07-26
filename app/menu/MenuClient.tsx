@@ -154,29 +154,35 @@ export function MenuClient({ initialItems }: { initialItems?: MenuItem[] }) {
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] items-start">
-        <div className="relative w-full">
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+      {/* Search Input & Menu Summary Row */}
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] items-stretch">
+        <div className="relative flex w-full items-center">
+          <Search className="pointer-events-none absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
           <Input
             type="text"
             placeholder="Search items or description..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-11 pr-4 py-3 rounded-3xl border border-zinc-800 bg-zinc-950 text-zinc-100 placeholder:text-zinc-500 shadow-lg shadow-black/20"
+            className="h-full w-full pl-13 pr-5 py-4 rounded-[2rem] border border-white/10 bg-white/5 text-sm sm:text-base text-zinc-100 placeholder:text-zinc-500 shadow-xl shadow-black/20 backdrop-blur-xl focus-visible:ring-amber-500"
           />
         </div>
 
-        <div className="rounded-3xl border border-zinc-800 bg-zinc-950/90 p-4 text-sm text-zinc-400 shadow-sm shadow-black/10">
-          <p className="font-semibold text-zinc-100">Menu summary</p>
-          <p className="mt-2 text-xs leading-6">
-            {filteredItems.length} {filteredItems.length === 1 ? 'dish' : 'dishes'} available for your current selection.
+        <div className="rounded-[2rem] border border-white/10 bg-white/5 p-5 text-sm text-zinc-400 shadow-xl shadow-black/20 backdrop-blur-xl">
+          <div className="flex items-center justify-between">
+            <p className="font-extrabold text-zinc-100 uppercase tracking-wider text-xs">Menu Summary</p>
+            <span className="rounded-full bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 text-[11px] font-bold text-amber-400">
+              {filteredItems.length} {filteredItems.length === 1 ? 'Dish' : 'Dishes'}
+            </span>
+          </div>
+          <p className="mt-2 text-xs leading-5 text-zinc-400">
+            {filteredItems.length} dishes available for your current selection.
           </p>
-          <div className="mt-4 space-y-2 text-xs text-zinc-400">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex h-2.5 w-2.5 rounded-full bg-amber-400" />Freshly sourced ingredients
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-zinc-400">
+            <div className="flex items-center gap-1.5">
+              <span className="inline-flex h-2 w-2 rounded-full bg-amber-400" />Freshly Sourced
             </div>
-            <div className="flex items-center gap-2">
-              <span className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />Seasonal favourites and bold flavours
+            <div className="flex items-center gap-1.5">
+              <span className="inline-flex h-2 w-2 rounded-full bg-emerald-400" />Seasonal Favourites
             </div>
           </div>
         </div>
