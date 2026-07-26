@@ -2,12 +2,13 @@
 
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Crown, ClipboardList, Clock, ArrowRight, Utensils, AlertCircle, Loader2 } from 'lucide-react'
+import { Crown, ClipboardList, Clock, ArrowRight, Utensils, AlertCircle, Loader2, Sparkles } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { useRoleGuard } from '@/hooks/useRoleGuard'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { BreadcrumbNav } from '@/components/BreadcrumbNav'
 
 interface Order {
   id: string
@@ -82,14 +83,17 @@ export default function OrdersPage() {
     <div className="max-w-4xl mx-auto space-y-6 py-6 px-4 sm:px-0">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-amber-500/20 pb-6">
-        <div>
-          <div className="flex items-center gap-2">
-            <Crown className="h-6 w-6 text-amber-400" />
-            <h1 className="text-3xl font-extrabold gold-gradient-text">Your Royal Orders</h1>
+        <div className="space-y-3">
+          <BreadcrumbNav items={[{ label: 'Home', href: '/' }, { label: 'Orders' }]} />
+          <div>
+            <div className="flex items-center gap-2">
+              <Crown className="h-6 w-6 text-amber-400" />
+              <h1 className="text-3xl font-extrabold gold-gradient-text">Your Royal Orders</h1>
+            </div>
+            <p className="text-sm text-zinc-400 mt-1">
+              Track live preparation progress and view past dining receipts.
+            </p>
           </div>
-          <p className="text-sm text-zinc-400 mt-1">
-            Track live preparation progress and view past dining receipts.
-          </p>
         </div>
 
         <Button asChild className="royal-button px-5">
@@ -128,6 +132,9 @@ export default function OrdersPage() {
           {orders.map((order) => {
             const statusUpper = (order.status || 'pending').toUpperCase()
             const isCompleted = order.status?.toLowerCase() === 'completed'
+            const statusKey = (order.status || 'pending').toLowerCase()
+            const orderSteps = ['pending', 'preparing', 'ready', 'completed']
+            const activeIndex = Math.max(0, orderSteps.indexOf(statusKey))
 
             return (
               <Card
@@ -183,6 +190,29 @@ export default function OrdersPage() {
                           <ArrowRight className="h-4 w-4" />
                         </Link>
                       </Button>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex items-center gap-2 rounded-xl border border-zinc-800/80 bg-zinc-950/50 p-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/10 text-amber-300">
+                      <Sparkles className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 text-xs text-zinc-400">
+                        <span className="relative flex h-2.5 w-2.5">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
+                          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-amber-500" />
+                        </span>
+                        Live tracking · {statusUpper}
+                      </div>
+                      <div className="mt-2 flex items-center gap-2">
+                        {orderSteps.map((step, idx) => (
+                          <div
+                            key={`${order.id}-${step}`}
+                            className={`h-2 flex-1 rounded-full transition-all ${idx <= activeIndex ? 'bg-amber-500' : 'bg-zinc-800'}`}
+                          />
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </CardContent>

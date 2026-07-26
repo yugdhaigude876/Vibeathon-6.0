@@ -32,22 +32,6 @@
 
   body {
     @apply bg-zinc-950 text-zinc-50 antialiased selection:bg-amber-500/30 selection:text-amber-200;
-    background-image: radial-gradient(circle at top left, rgba(251, 191, 36, 0.16), transparent 28%), linear-gradient(135deg, rgba(24, 24, 27, 0.95), rgba(9, 9, 11, 1));
-    background-attachment: fixed;
-    min-height: 100vh;
-    position: relative;
-  }
-
-  body::before {
-    content: '';
-    position: fixed;
-    inset: -20% -10% auto auto;
-    width: 32rem;
-    height: 32rem;
-    background: radial-gradient(circle, rgba(249, 115, 22, 0.22), transparent 70%);
-    filter: blur(80px);
-    pointer-events: none;
-    z-index: 0;
   }
 }
 
@@ -59,16 +43,13 @@
     @apply border border-amber-500/30 hover:border-amber-500/60 transition-colors;
   }
   .royal-card {
-    @apply rounded-3xl border border-white/10 bg-zinc-900/70 backdrop-blur-xl shadow-[0_20px_80px_rgba(0,0,0,0.35)] transition-all;
+    @apply bg-zinc-900/90 border border-amber-500/20 backdrop-blur-md shadow-xl shadow-amber-500/5 rounded-2xl transition-all;
   }
   .royal-button {
-    @apply bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-600 text-zinc-950 font-bold hover:brightness-110 shadow-[0_10px_30px_rgba(245,158,11,0.25)] transition-all active:scale-[0.98];
+    @apply bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-600 text-zinc-950 font-bold hover:brightness-110 shadow-md shadow-amber-600/20 transition-all active:scale-[0.98];
   }
-  .glass-panel {
-    @apply rounded-[1.75rem] border border-white/10 bg-zinc-900/60 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.28)];
-  }
-  .section-shell {
-    @apply rounded-[1.75rem] border border-amber-500/15 bg-zinc-900/60 p-4 shadow-[0_20px_80px_rgba(0,0,0,0.24)] backdrop-blur-xl sm:p-6;
+  .page-transition-enter {
+    @apply opacity-0 translate-y-2;
   }
   .no-scrollbar::-webkit-scrollbar {
     display: none;

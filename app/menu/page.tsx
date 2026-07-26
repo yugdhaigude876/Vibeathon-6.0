@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState, useMemo } from 'react'
-import { Search, Plus, Minus, ShoppingBag, Utensils, AlertCircle } from 'lucide-react'
+import { Search, Plus, Minus, ShoppingBag, Utensils, AlertCircle, SlidersHorizontal, Leaf, CircleDollarSign } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { useCart } from '@/context/CartContext'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { BreadcrumbNav } from '@/components/BreadcrumbNav'
 
 export interface MenuItem {
   id: string
@@ -22,6 +23,7 @@ export interface MenuItem {
 }
 
 const DEFAULT_CATEGORIES = ['All', 'Main', 'Appetizer', 'Side', 'Beverage']
+const DIETARY_OPTIONS = ['All', 'Vegetarian', 'Vegan', 'Gluten-Free', 'Dairy-Free']
 
 export default function MenuPage() {
   const supabase = createClient()
@@ -32,6 +34,8 @@ export default function MenuPage() {
   const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [selectedCategory, setSelectedCategory] = useState<string>('All')
+  const [priceRange, setPriceRange] = useState<string>('all')
+  const [dietaryFilter, setDietaryFilter] = useState<string>('All')
 
   // Fetch initial menu items from Supabase
   const fetchMenuItems = async () => {
@@ -100,6 +104,26 @@ export default function MenuPage() {
     }
   }, [])
 
+  const getDietaryTags = (item: MenuItem) => {
+    const text = `${item.name} ${item.description || ''}`.toLowerCase()
+    const tags: string[] = []
+
+    if (text.includes('vegan') || text.includes('plant') || text.includes('tofu') || text.includes('lentil')) {
+      tags.push('vegan')
+    }
+    if (text.includes('vegetarian') || text.includes('veg') || text.includes('paneer') || text.includes('mushroom')) {
+      tags.push('vegetarian')
+    }
+    if (text.includes('gluten-free') || text.includes('gluten free') || text.includes('rice') || text.includes('corn')) {
+      tags.push('gluten-free')
+    }
+    if (text.includes('dairy-free') || text.includes('lactose-free') || text.includes('without cream') || text.includes('non dairy')) {
+      tags.push('dairy-free')
+    }
+
+    return tags
+  }
+
   // Dynamic category list combining default categories and database categories
   const categories = useMemo(() => {
     const fetchedCategories = Array.from(
@@ -119,7 +143,7 @@ export default function MenuPage() {
     return combined
   }, [menuItems])
 
-  // Filter items by category and real-time search query
+  // Filter items by category, price, dietary tags, and real-time search query
   const filteredItems = useMemo(() => {
     return menuItems.filter((item) => {
       const matchesCategory =
@@ -132,56 +156,101 @@ export default function MenuPage() {
         item.name?.toLowerCase().includes(query) ||
         (item.description && item.description.toLowerCase().includes(query))
 
-      return matchesCategory && matchesSearch
+      const matchesPrice =
+        priceRange === 'all' || Number(item.price || 0) <= Number(priceRange)
+
+      const dietaryTags = getDietaryTags(item)
+      const matchesDietary =
+        dietaryFilter === 'All' ||
+        dietaryTags.some((tag) => tag === dietaryFilter.toLowerCase())
+
+      return matchesCategory && matchesSearch && matchesPrice && matchesDietary
     })
-  }, [menuItems, selectedCategory, searchQuery])
+  }, [menuItems, selectedCategory, searchQuery, priceRange, dietaryFilter])
 
   return (
-    <div className="relative z-10 space-y-6 pb-24">
-      <div className="glass-panel overflow-hidden p-5 sm:p-8">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-2xl space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-amber-300">
-              <Utensils className="h-3.5 w-3.5" />
-              Signature Dining
-            </div>
-            <h1 className="flex items-center gap-2 text-3xl font-bold tracking-tight text-zinc-50 sm:text-4xl">
-              <span className="gold-gradient-text">Royal Menu</span>
-            </h1>
-            <p className="text-sm leading-6 text-zinc-400 sm:text-base">
-              Discover curated dishes, seamless ordering, and a refined in-app dining experience designed for comfort and speed.
-            </p>
-          </div>
+    <div className="space-y-6 pb-24">
+      {/* Header section */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <BreadcrumbNav items={[{ label: 'Home', href: '/' }, { label: 'Menu' }]} className="mb-3" />
+          <h1 className="text-3xl font-bold tracking-tight text-zinc-50 flex items-center gap-2">
+            <Utensils className="h-7 w-7 text-amber-500" />
+            Digital Menu
+          </h1>
+          <p className="text-sm text-zinc-400 mt-1">
+            Explore our curated culinary creations and add items directly to your cart.
+          </p>
+        </div>
 
-          <div className="relative w-full lg:max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-            <Input
-              type="text"
-              placeholder="Search dishes or notes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 border-white/10 bg-zinc-950/70 text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-amber-500"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400 transition-colors hover:text-zinc-200"
-              >
-                Clear
-              </button>
-            )}
-          </div>
+        {/* Real-time search input */}
+        <div className="relative w-full sm:w-72">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+          <Input
+            type="text"
+            placeholder="Search items or description..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 bg-zinc-900 border-zinc-800 text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-amber-500"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400 hover:text-zinc-200"
+            >
+              Clear
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="sticky top-14 z-30 -mx-4 border-b border-white/10 bg-zinc-950/70 px-4 py-3 backdrop-blur-xl sm:-mx-6 sm:px-6">
+      <div className="rounded-2xl border border-zinc-800/80 bg-zinc-900/70 p-4 shadow-lg shadow-amber-500/5">
+        <div className="flex items-center gap-2 text-sm font-medium text-amber-300">
+          <SlidersHorizontal className="h-4 w-4" />
+          Advanced filters
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <label className="space-y-2 text-sm text-zinc-300">
+            <span className="flex items-center gap-2"><CircleDollarSign className="h-4 w-4 text-amber-400" />Price up to</span>
+            <select
+              value={priceRange}
+              onChange={(e) => setPriceRange(e.target.value)}
+              className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100"
+            >
+              <option value="all">Any price</option>
+              <option value="15">₹15</option>
+              <option value="25">₹25</option>
+              <option value="40">₹40</option>
+              <option value="60">₹60</option>
+            </select>
+          </label>
+
+          <label className="space-y-2 text-sm text-zinc-300">
+            <span className="flex items-center gap-2"><Leaf className="h-4 w-4 text-emerald-400" />Dietary preference</span>
+            <select
+              value={dietaryFilter}
+              onChange={(e) => setDietaryFilter(e.target.value)}
+              className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100"
+            >
+              {DIETARY_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </div>
+
+      {/* Sticky Category Filter Tabs */}
+      <div className="sticky top-14 z-30 bg-zinc-950/90 backdrop-blur-md py-3 -mx-4 px-4 sm:-mx-6 sm:px-6 border-b border-zinc-800/80">
         <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
-          <TabsList className="w-full justify-start overflow-x-auto border border-white/10 bg-zinc-900/70 p-1 no-scrollbar">
+          <TabsList className="w-full justify-start overflow-x-auto no-scrollbar bg-zinc-900/80 p-1 border border-zinc-800">
             {categories.map((cat) => (
               <TabsTrigger
                 key={cat}
                 value={cat}
-                className="shrink-0 px-4 py-1.5 text-xs font-semibold capitalize text-zinc-400 sm:text-sm data-[state=active]:bg-amber-600 data-[state=active]:text-zinc-950"
+                className="capitalize text-xs sm:text-sm px-4 py-1.5 shrink-0 data-[state=active]:bg-amber-600 data-[state=active]:text-zinc-950 font-medium"
               >
                 {cat}
               </TabsTrigger>
@@ -256,10 +325,10 @@ export default function MenuPage() {
             return (
               <Card
                 key={item.id}
-                className={`group flex flex-col justify-between overflow-hidden transition-all duration-300 ${
+                className={`flex flex-col justify-between overflow-hidden transition-all duration-300 border hover:-translate-y-1 ${
                   !item.is_available
-                    ? 'border border-white/10 bg-zinc-900/40 opacity-75'
-                    : 'border border-white/10 bg-zinc-900/75 hover:-translate-y-1 hover:border-amber-500/30 hover:shadow-[0_20px_60px_rgba(245,158,11,0.12)]'
+                    ? 'border-zinc-800/60 bg-zinc-900/40 opacity-75'
+                    : 'border-zinc-800 bg-zinc-900/90 hover:border-zinc-700 hover:shadow-lg hover:shadow-amber-500/5'
                 }`}
               >
                 <div>
@@ -269,38 +338,47 @@ export default function MenuPage() {
                       <img
                         src={item.image_url}
                         alt={item.name}
-                        className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 ${
+                        className={`h-full w-full object-cover transition-transform duration-300 hover:scale-105 ${
                           !item.is_available ? 'grayscale opacity-60' : ''
                         }`}
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/80 via-transparent to-transparent" />
                     </div>
                   ) : (
-                    <div className="flex h-32 w-full items-center justify-center border-b border-white/10 bg-gradient-to-br from-amber-500/15 via-zinc-900 to-zinc-950">
-                      <Utensils className="h-8 w-8 text-amber-400/70" />
+                    <div className="h-28 w-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center border-b border-zinc-800/80">
+                      <Utensils className="h-8 w-8 text-zinc-700" />
                     </div>
                   )}
 
                   <CardHeader className="pb-2">
                     <div className="flex items-start justify-between gap-2">
-                      <CardTitle className="text-lg font-bold leading-snug text-zinc-100">
+                      <CardTitle className="text-lg font-bold text-zinc-100 leading-snug">
                         {item.name}
                       </CardTitle>
-                      <Badge variant="secondary" className="shrink-0 border border-amber-500/20 bg-amber-500/10 text-[10px] font-semibold uppercase tracking-wider text-amber-200">
+                      {/* Category Badge */}
+                      <Badge variant="secondary" className="shrink-0 text-[10px] uppercase tracking-wider font-semibold">
                         {item.category}
                       </Badge>
                     </div>
                   </CardHeader>
 
                   <CardContent className="pb-4">
-                    <p className="min-h-[2.5rem] text-xs leading-5 text-zinc-400 line-clamp-3">
+                    {/* Item Description */}
+                    <p className="text-xs text-zinc-400 line-clamp-3 min-h-[2.5rem]">
                       {item.description || 'No description available for this item.'}
                     </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {getDietaryTags(item).slice(0, 2).map((tag) => (
+                        <Badge key={tag} variant="outline" className="border-amber-500/20 text-[10px] uppercase tracking-wide text-amber-300">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
                   </CardContent>
                 </div>
 
-                <div className="mt-2 border-t border-white/10 p-6 pt-4">
-                  <div className="flex items-center justify-between">
+                {/* Card Footer with Price and Action Button */}
+                <div className="p-6 pt-0 border-t border-zinc-800/60 mt-2">
+                  <div className="flex items-center justify-between pt-3">
                     <div>
                       <span className="text-xs text-zinc-500 block">Price</span>
                       <span className="text-lg font-extrabold text-amber-400">
@@ -326,14 +404,14 @@ export default function MenuPage() {
                       <Button
                         size="sm"
                         onClick={() => addToCart(item)}
-                        className="flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-yellow-500 font-semibold text-zinc-950 shadow-[0_8px_24px_rgba(245,158,11,0.25)] hover:brightness-110"
+                        className="bg-amber-600 text-zinc-950 font-semibold hover:bg-amber-500 transition-colors flex items-center gap-1.5 shadow-sm"
                       >
                         <Plus className="h-4 w-4" />
                         Add to Cart
                       </Button>
                     ) : (
                       /* Quantity Selector (+/- buttons) */
-                      <div className="flex items-center gap-2 rounded-full border border-white/10 bg-zinc-800/80 p-1">
+                      <div className="flex items-center gap-2 rounded-lg bg-zinc-800 p-1 border border-zinc-700">
                         <Button
                           variant="ghost"
                           size="icon"
@@ -367,8 +445,8 @@ export default function MenuPage() {
 
       {/* Floating Bottom Cart Bar */}
       {totalItems > 0 && (
-        <div className="fixed bottom-4 left-4 right-4 z-50 animate-in fade-in slide-in-from-bottom-5 sm:left-auto sm:right-8 sm:w-96">
-          <div className="flex items-center justify-between rounded-[1.25rem] border border-amber-500/30 bg-gradient-to-r from-amber-500 to-yellow-500 p-4 text-zinc-950 shadow-[0_20px_80px_rgba(245,158,11,0.25)]">
+        <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-8 sm:w-96 z-50 animate-in fade-in slide-in-from-bottom-5">
+          <div className="flex items-center justify-between rounded-xl bg-amber-600 p-4 text-zinc-950 shadow-2xl shadow-amber-600/30 border border-amber-500">
             <div className="flex items-center gap-3">
               <div className="relative flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-950/20 text-zinc-950">
                 <ShoppingBag className="h-5 w-5" />

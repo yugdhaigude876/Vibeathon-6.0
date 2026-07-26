@@ -23,6 +23,7 @@ import { useRoleGuard } from '@/hooks/useRoleGuard'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { BreadcrumbNav } from '@/components/BreadcrumbNav'
 import {
   Dialog,
   DialogContent,
@@ -228,29 +229,32 @@ export default function OrderTrackingPage() {
     <div className="max-w-4xl mx-auto space-y-8 py-6 px-4 sm:px-6">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-amber-500/20 pb-6">
-        <div className="flex items-center gap-3">
-          <Button
-            asChild
-            variant="ghost"
-            size="icon"
-            className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 rounded-full"
-          >
-            <Link href="/menu">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-          </Button>
-          <div>
-            <div className="flex items-center gap-2">
-              <Crown className="h-5 w-5 text-amber-400" />
-              <h1 className="text-2xl font-extrabold gold-gradient-text tracking-tight">
-                Live Order Tracker
-              </h1>
+        <div className="space-y-3">
+          <BreadcrumbNav items={[{ label: 'Home', href: '/' }, { label: 'Orders', href: '/orders' }, { label: `#${order.id.slice(0, 8)}` }]} />
+          <div className="flex items-center gap-3">
+            <Button
+              asChild
+              variant="ghost"
+              size="icon"
+              className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 rounded-full"
+            >
+              <Link href="/menu">
+                <ArrowLeft className="h-5 w-5" />
+              </Link>
+            </Button>
+            <div>
+              <div className="flex items-center gap-2">
+                <Crown className="h-5 w-5 text-amber-400" />
+                <h1 className="text-2xl font-extrabold gold-gradient-text tracking-tight">
+                  Live Order Tracker
+                </h1>
+              </div>
+              <p className="text-xs text-zinc-400 mt-1 flex items-center gap-2">
+                Order Ref: <span className="font-mono text-amber-300 font-semibold">{order.id}</span>
+                <span>•</span>
+                <span>{new Date(order.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              </p>
             </div>
-            <p className="text-xs text-zinc-400 mt-1 flex items-center gap-2">
-              Order Ref: <span className="font-mono text-amber-300 font-semibold">{order.id}</span>
-              <span>•</span>
-              <span>{new Date(order.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-            </p>
           </div>
         </div>
 
@@ -274,6 +278,18 @@ export default function OrderTrackingPage() {
               <Utensils className="h-4 w-4 mr-1.5" /> Back to Menu
             </Link>
           </Button>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-amber-500/20 bg-zinc-900/70 p-4 text-sm text-zinc-300">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="font-semibold text-amber-300">Live order tracking is active</p>
+            <p className="text-zinc-400">Your request is moving through the kitchen with real-time progress updates.</p>
+          </div>
+          <div className="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-amber-300">
+            {order.status}
+          </div>
         </div>
       </div>
 

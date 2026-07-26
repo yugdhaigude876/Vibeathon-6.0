@@ -9,6 +9,7 @@ import { getCurrentUser, signOut } from '@/lib/auth'
 import { Navigation } from '@/components/Navigation'
 import { AIAssistant } from '@/components/AIAssistant'
 import { Toaster } from '@/components/ui/toaster'
+import { PageTransition } from '@/components/PageTransition'
 
 import { CartProvider } from '@/context/CartContext'
 
@@ -69,7 +70,7 @@ export default function RootLayout({
         <body className="min-h-screen bg-zinc-950 text-zinc-50 antialiased">
           <CartProvider>
             <Toaster />
-            {children}
+            <PageTransition>{children}</PageTransition>
             <AIAssistant role="customer" />
           </CartProvider>
         </body>
@@ -83,7 +84,7 @@ export default function RootLayout({
         <CartProvider>
           <Toaster />
           <Navigation userEmail={user?.email ?? null} onLogout={handleLogout}>
-            {children}
+            <PageTransition>{children}</PageTransition>
           </Navigation>
           <AIAssistant role={user?.email ? 'customer' : 'customer'} />
         </CartProvider>
