@@ -5,14 +5,13 @@ import { cookies } from 'next/headers'
  * Validates whether a user has one of the required roles.
  * Queries the profiles table using the user's ID.
  */
-export async function validateUserRole(
-  userId: string,
-  allowedRoles: string[]
-): Promise<boolean> {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+function getSupabaseClient(cookieStore: any) {
+  const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseUrl = (rawUrl && rawUrl.startsWith('http')) ? rawUrl : 'https://placeholder.supabase.co'
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
+  return createServerClient(
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
         getAll() {
@@ -30,6 +29,14 @@ export async function validateUserRole(
       },
     }
   )
+}
+
+export async function validateUserRole(
+  userId: string,
+  allowedRoles: string[]
+): Promise<boolean> {
+  const cookieStore = await cookies()
+  const supabase = getSupabaseClient(cookieStore)
 
   const { data, error } = await supabase
     .from('profiles')
@@ -50,24 +57,7 @@ export async function validateUserOwnsOrder(
   orderId: string
 ): Promise<boolean> {
   const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet: Array<{ name: string; value: string; options?: any }>) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          } catch {}
-        },
-      },
-    }
-  )
+  const supabase = getSupabaseClient(cookieStore)
 
   const { data, error } = await supabase
     .from('orders')
@@ -85,24 +75,7 @@ export async function validateUserOwnsOrder(
  */
 export async function validateMenuItemExists(itemId: string): Promise<boolean> {
   const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet: Array<{ name: string; value: string; options?: any }>) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          } catch {}
-        },
-      },
-    }
-  )
+  const supabase = getSupabaseClient(cookieStore)
 
   const { data, error } = await supabase
     .from('menu_items')
@@ -122,24 +95,7 @@ export async function validateUserOwnsReservation(
   reservationId: string
 ): Promise<boolean> {
   const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet: Array<{ name: string; value: string; options?: any }>) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          } catch {}
-        },
-      },
-    }
-  )
+  const supabase = getSupabaseClient(cookieStore)
 
   const { data, error } = await supabase
     .from('reservations')
