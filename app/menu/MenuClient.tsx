@@ -53,11 +53,11 @@ function getDietaryTags(item: MenuItem): string[] {
   return tags
 }
 
-export function MenuClient({ initialItems }: { initialItems: MenuItem[] }) {
+export function MenuClient({ initialItems }: { initialItems?: MenuItem[] }) {
   const { addToCart } = useCart()
   const { toast } = useToast()
 
-  const [menuItems] = useState<MenuItem[]>(initialItems)
+  const [menuItems] = useState<MenuItem[]>(initialItems ?? [])
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [selectedCategory, setSelectedCategory] = useState<string>('All')
   const [priceRange, setPriceRange] = useState<string>('all')
