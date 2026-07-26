@@ -23,6 +23,22 @@ export interface MenuItem {
 }
 
 const DEFAULT_CATEGORIES = ['All', 'Main', 'Appetizer', 'Side', 'Beverage']
+const DIETARY_OPTIONS = ['All', 'Veg', 'Non-Veg', 'Vegan', 'Gluten-Free']
+
+function getDietaryTags(item: MenuItem): string[] {
+  const name = item.name?.toLowerCase() || ''
+  const desc = item.description?.toLowerCase() || ''
+  const text = `${name} ${desc}`
+  const tags: string[] = []
+
+  if (text.includes('vegan')) tags.push('vegan')
+  if (text.includes('gluten-free') || text.includes('gluten free')) tags.push('gluten-free')
+  if (text.includes('veg') && !text.includes('non-veg')) tags.push('veg')
+  if (text.includes('chicken') || text.includes('mutton') || text.includes('fish') || text.includes('prawn') || text.includes('meat') || text.includes('non-veg')) {
+    tags.push('non-veg')
+  }
+  return tags
+}
 
 export default function MenuPage() {
   const supabase = createClient()
