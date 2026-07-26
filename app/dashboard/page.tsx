@@ -12,7 +12,6 @@ import {
   Utensils,
   ArrowRight,
   Clock,
-  Heart,
   ChevronRight,
   Phone,
   Compass,
@@ -100,9 +99,19 @@ export default function DashboardPage() {
           .eq('customer_id', user.id)
           .order('created_at', { ascending: false })
 
-        if (orderData) {
-          setOrders(orderData as Order[])
-        }
+        let mergedOrders: Order[] = orderData ? [...(orderData as Order[])] : []
+
+        // Merge localStorage orders (handles Supabase FK failures)
+        try {
+          const localOrders: Order[] = JSON.parse(localStorage.getItem('platr_user_orders') || '[]')
+          localOrders.forEach((lOrder) => {
+            if (!mergedOrders.some((o) => o.id === lOrder.id)) {
+              mergedOrders.unshift(lOrder)
+            }
+          })
+        } catch {}
+
+        setOrders(mergedOrders)
 
         // Fetch Reservations
         const { data: resData } = await supabase
@@ -111,9 +120,19 @@ export default function DashboardPage() {
           .eq('customer_id', user.id)
           .order('created_at', { ascending: false })
 
-        if (resData) {
-          setReservations(resData as Reservation[])
-        }
+        let mergedReservations: Reservation[] = resData ? [...(resData as Reservation[])] : []
+
+        // Merge localStorage reservations (handles Supabase schema failures)
+        try {
+          const localRes: Reservation[] = JSON.parse(localStorage.getItem('platr_user_reservations') || '[]')
+          localRes.forEach((lRes) => {
+            if (!mergedReservations.some((r) => r.id === lRes.id)) {
+              mergedReservations.unshift(lRes)
+            }
+          })
+        } catch {}
+
+        setReservations(mergedReservations)
       } catch (err) {
         console.error('Error loading dashboard data:', err)
       } finally {
@@ -133,27 +152,9 @@ export default function DashboardPage() {
     ).length
   }, [reservations])
 
-  // Calculate favorite item
-  const favoriteItemName = useMemo(() => {
-    const itemCounts: Record<string, number> = {}
-
-    orders.forEach((o) => {
-      o.order_items?.forEach((item) => {
-        const name = item.menu_items?.name || 'Royale Specialty'
-        itemCounts[name] = (itemCounts[name] || 0) + item.quantity
-      })
-    })
-
-    let topName = 'Butter Chicken Special'
-    let maxQty = 0
-    Object.entries(itemCounts).forEach(([name, count]) => {
-      if (count > maxQty) {
-        maxQty = count
-        topName = name
-      }
-    })
-
-    return topName
+  // Total spent across all orders
+  const totalSpent = useMemo(() => {
+    return orders.reduce((sum, o) => sum + Number(o.total_amount || 0), 0)
   }, [orders])
 
   // Recent 3 orders
@@ -253,19 +254,19 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Stat 3: Favorite Item */}
+        {/* Stat 3: Total Spent */}
         <Card className="royal-card border border-amber-500/20 hover:border-amber-500/40">
           <CardContent className="p-6 flex items-center justify-between">
             <div className="space-y-1 min-w-0 pr-2">
               <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider block">
-                Favorite Dish
+                Total Spent
               </span>
-              <span className="text-base font-bold text-zinc-100 truncate block">
-                {favoriteItemName}
+              <span className="text-2xl font-black text-amber-400">
+                ₹{totalSpent.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
               </span>
             </div>
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
-              <Heart className="h-6 w-6 text-amber-400 fill-amber-400/20" />
+              <ShoppingBag className="h-6 w-6 text-amber-400" />
             </div>
           </CardContent>
         </Card>

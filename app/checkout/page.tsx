@@ -30,9 +30,12 @@ export default function CheckoutPage() {
   const { cartItems, subtotal, tax, totalAmount, clearCart } = useCart()
 
   const [tableNumber, setTableNumber] = useState('')
+  const [tableNumberTouched, setTableNumberTouched] = useState(false)
   const [notes, setNotes] = useState('')
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash'>('card')
   const [loading, setLoading] = useState(false)
+
+  const tableNumberInvalid = tableNumberTouched && !tableNumber.trim()
 
   // Card Form State
   const [cardNumber, setCardNumber] = useState('')
@@ -199,11 +202,19 @@ export default function CheckoutPage() {
             </CardHeader>
             <CardContent>
               <Input
-                placeholder="e.g. Table 4 (Mandatory to place order)"
+                placeholder="Enter table number (required)"
                 value={tableNumber}
-                onChange={(e) => setTableNumber(e.target.value)}
-                className="bg-zinc-950 border-amber-500/50 text-base font-bold text-amber-300 placeholder:text-zinc-600 focus-visible:ring-amber-500 py-5"
+                onChange={(e) => { setTableNumber(e.target.value); setTableNumberTouched(true) }}
+                onBlur={() => setTableNumberTouched(true)}
+                className={`bg-zinc-950 text-base font-bold text-amber-300 placeholder:text-zinc-600 focus-visible:ring-amber-500 py-5 ${
+                  tableNumberInvalid
+                    ? 'border-red-500 focus-visible:ring-red-500'
+                    : 'border-amber-500/50'
+                }`}
               />
+              {tableNumberInvalid && (
+                <p className="text-xs text-red-400 mt-2 font-semibold">⚠️ Table number is required to place an order.</p>
+              )}
             </CardContent>
           </Card>
 
@@ -380,9 +391,12 @@ export default function CheckoutPage() {
               </div>
 
               <Button
-                onClick={handlePlaceOrder}
-                disabled={loading}
-                className="w-full mt-4 bg-amber-500 text-zinc-950 hover:bg-amber-400 font-bold py-6 text-base shadow-lg shadow-amber-500/20"
+                onClick={() => {
+                  setTableNumberTouched(true)
+                  handlePlaceOrder()
+                }}
+                disabled={loading || !tableNumber.trim()}
+                className="w-full mt-4 bg-amber-500 text-zinc-950 hover:bg-amber-400 font-bold py-6 text-base shadow-lg shadow-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
@@ -392,7 +406,9 @@ export default function CheckoutPage() {
                 ) : (
                   <>
                     <Sparkles className="mr-2 h-5 w-5" />
-                    {paymentMethod === 'card' ? `Pay ₹${totalAmount.toFixed(2)} & Order` : 'Confirm Order (Pay Cash)'}
+                    {!tableNumber.trim()
+                      ? 'Enter Table Number to Order'
+                      : paymentMethod === 'card' ? `Pay ₹${totalAmount.toFixed(2)} & Order` : 'Confirm Order (Pay Cash)'}
                   </>
                 )}
               </Button>
