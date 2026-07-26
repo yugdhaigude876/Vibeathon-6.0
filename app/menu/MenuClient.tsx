@@ -102,100 +102,137 @@ export function MenuClient({ initialItems }: { initialItems?: MenuItem[] }) {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-2xl border border-zinc-800/80 bg-zinc-900/70 p-4 shadow-lg shadow-amber-500/5">
-        <div className="flex items-center gap-2 text-sm font-medium text-amber-300">
-          <SlidersHorizontal className="h-4 w-4" />
-          Advanced filters
-        </div>
-        <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <label className="space-y-2 text-sm text-zinc-300">
-            <span className="flex items-center gap-2"><IndianRupee className="h-4 w-4 text-amber-400" />Price up to</span>
-            <select
-              value={priceRange}
-              onChange={(e) => setPriceRange(e.target.value)}
-              className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-zinc-100"
-            >
-              <option value="all">All</option>
-              <option value="500">₹500</option>
-              <option value="600">₹600</option>
-              <option value="700">₹700</option>
-              <option value="800">₹800</option>
-            </select>
-          </label>
-          <label className="space-y-2 text-sm text-zinc-300">
-            <span className="flex items-center gap-2"><Leaf className="h-4 w-4 text-emerald-400" />Dietary</span>
-            <select
-              value={dietaryFilter}
-              onChange={(e) => setDietaryFilter(e.target.value)}
-              className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-zinc-100"
-            >
-              {DIETARY_OPTIONS.map((option) => (
-                <option key={option} value={option}>{option}</option>
-              ))}
-            </select>
-          </label>
+    <div className="space-y-7">
+      <div className="rounded-[2rem] border border-zinc-800/80 bg-gradient-to-br from-zinc-950/95 via-zinc-900/90 to-zinc-950/95 p-5 shadow-[0_25px_60px_-30px_rgba(252,211,77,0.75)]">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-3">
+            <div className="inline-flex items-center gap-2 rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">
+              <SlidersHorizontal className="h-4 w-4" />
+              Advanced filters
+            </div>
+            <div>
+              <h2 className="text-2xl font-black tracking-tight text-zinc-50">Discover the chef's menu</h2>
+              <p className="max-w-2xl text-sm leading-6 text-zinc-400">
+                Explore chef-curated dishes with smart filters and quick cart access.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+            <label className="space-y-2 text-sm text-zinc-300">
+              <span className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-zinc-500">
+                <IndianRupee className="h-4 w-4 text-amber-400" />Price cap
+              </span>
+              <select
+                value={priceRange}
+                onChange={(e) => setPriceRange(e.target.value)}
+                className="w-full rounded-3xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 shadow-inner shadow-black/10"
+              >
+                <option value="all">All</option>
+                <option value="500">₹500</option>
+                <option value="600">₹600</option>
+                <option value="700">₹700</option>
+                <option value="800">₹800</option>
+              </select>
+            </label>
+            <label className="space-y-2 text-sm text-zinc-300">
+              <span className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-zinc-500">
+                <Leaf className="h-4 w-4 text-emerald-400" />Dietary
+              </span>
+              <select
+                value={dietaryFilter}
+                onChange={(e) => setDietaryFilter(e.target.value)}
+                className="w-full rounded-3xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 shadow-inner shadow-black/10"
+              >
+                {DIETARY_OPTIONS.map((option) => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            </label>
+          </div>
         </div>
       </div>
 
-      <div className="relative w-full sm:w-72">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-        <Input
-          type="text"
-          placeholder="Search items or description..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9 bg-zinc-900 border-zinc-800 text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-amber-500"
-        />
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] items-start">
+        <div className="relative w-full">
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+          <Input
+            type="text"
+            placeholder="Search items or description..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-11 pr-4 py-3 rounded-3xl border border-zinc-800 bg-zinc-950 text-zinc-100 placeholder:text-zinc-500 shadow-lg shadow-black/20"
+          />
+        </div>
+
+        <div className="rounded-3xl border border-zinc-800 bg-zinc-950/90 p-4 text-sm text-zinc-400 shadow-sm shadow-black/10">
+          <p className="font-semibold text-zinc-100">Menu summary</p>
+          <p className="mt-2 text-xs leading-6">
+            {filteredItems.length} {filteredItems.length === 1 ? 'dish' : 'dishes'} available for your current selection.
+          </p>
+          <div className="mt-4 space-y-2 text-xs text-zinc-400">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex h-2.5 w-2.5 rounded-full bg-amber-400" />Freshly sourced ingredients
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />Seasonal favourites and bold flavours
+            </div>
+          </div>
+        </div>
       </div>
 
       <Tabs defaultValue="All" value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
-        <TabsList className="flex h-auto w-full max-w-full justify-start overflow-x-auto touch-pan-x gap-2 rounded-2xl bg-zinc-900/90 p-2.5 border border-zinc-800 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
+        <TabsList className="flex h-auto w-full max-w-full gap-2 overflow-x-auto rounded-3xl bg-zinc-900/90 p-2 shadow-sm shadow-black/10 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
           {categories.map((category) => (
             <TabsTrigger
               key={category}
               value={category}
-              className="shrink-0 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition-all data-[state=active]:bg-amber-500 data-[state=active]:text-zinc-950 text-zinc-300 hover:bg-zinc-800"
+              className="shrink-0 rounded-2xl px-4 py-2 text-xs sm:text-sm font-semibold transition-all data-[state=active]:bg-amber-500 data-[state=active]:text-zinc-950 text-zinc-300 hover:bg-zinc-800"
             >
               {category}
             </TabsTrigger>
           ))}
-          {/* Spacer to ensure the last category tab is fully visible and scrollable */}
-          <div className="w-4 shrink-0" />
         </TabsList>
       </Tabs>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         {filteredItems.length === 0 ? (
           <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-10 text-center text-zinc-400">
             No menu items matched your filters.
           </div>
         ) : (
           filteredItems.map((item) => (
-            <Card key={item.id} className="rounded-3xl border border-zinc-800 bg-zinc-950/90">
-              <CardHeader className="space-y-3">
+            <Card key={item.id} className="group overflow-hidden rounded-[2rem] border border-zinc-800 bg-zinc-950/90 shadow-xl shadow-black/20 transition duration-300 hover:-translate-y-1 hover:border-amber-500">
+              <CardHeader className="space-y-4 border-b border-zinc-800/70 pb-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <CardTitle className="text-lg font-semibold text-zinc-100">{item.name}</CardTitle>
-                    <p className="text-xs text-zinc-400">{item.category}</p>
+                    <CardTitle className="text-xl font-semibold text-zinc-50">{item.name}</CardTitle>
+                    <p className="text-sm text-zinc-400">{item.category}</p>
                   </div>
-                  <Badge className="rounded-full bg-amber-500 px-3 py-1 text-xs font-semibold text-zinc-950">
+                  <div className="rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-zinc-950 shadow-sm shadow-amber-500/20">
                     {formatPrice(item.price)}
-                  </Badge>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {getDietaryTags(item).map((tag) => (
+                    <span key={tag} className="rounded-full border border-zinc-800 bg-zinc-900/90 px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-zinc-300">
+                      {tag}
+                    </span>
+                  ))}
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm leading-6 text-zinc-400">{item.description || 'A royal specialty from our menu.'}</p>
-                <div className="flex items-center justify-between gap-4">
+              <CardContent className="space-y-5 p-0 pt-4">
+                <p className="min-h-[4.5rem] text-sm leading-6 text-zinc-400">{item.description || 'A royal specialty from our menu.'}</p>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <Button
-                    className="w-full bg-amber-600 hover:bg-amber-500 text-zinc-950"
+                    className="w-full bg-amber-600 text-zinc-950 transition hover:bg-amber-500 disabled:cursor-not-allowed disabled:bg-zinc-800"
                     onClick={() => handleAddToCart(item)}
                     disabled={!item.is_available}
                   >
                     {item.is_available ? 'Add to Cart' : 'Unavailable'}
                   </Button>
-                  <span className="text-xs uppercase tracking-[0.18em] text-zinc-500">
-                    {getDietaryTags(item).join(', ')}
+                  <span className="text-xs uppercase tracking-[0.24em] text-zinc-500">
+                    {item.is_available ? 'In stock' : 'Out of stock'}
                   </span>
                 </div>
               </CardContent>
