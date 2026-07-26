@@ -263,17 +263,14 @@ export function MenuClient({ initialItems }: { initialItems?: MenuItem[] }) {
                 </div>
 
                 <div className="mt-6 grid gap-4">
-                  <div className="flex items-center justify-between gap-4 text-sm text-zinc-400">
-                    <span className="font-semibold text-zinc-50">{formatPrice(item.price)}</span>
-                    <Button
-                      className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-orange-500 via-amber-400 to-orange-500 px-6 py-3 text-sm font-semibold text-zinc-950 shadow-[0_18px_40px_rgba(251,191,36,0.35)] transition duration-300 ease-out hover:shadow-[0_24px_50px_rgba(251,191,36,0.45)] active:scale-[0.98]"
-                      onClick={() => handleAddToCart(item)}
-                      disabled={!item.is_available}
-                    >
-                      <ShoppingCart className="mr-2 h-4 w-4" />
-                      Add to Cart
-                    </Button>
-                  </div>
+                  <Button
+                    className="w-full inline-flex items-center justify-center rounded-full bg-gradient-to-r from-orange-500 via-amber-400 to-orange-500 px-6 py-3.5 text-sm font-bold text-zinc-950 shadow-[0_18px_40px_rgba(251,191,36,0.35)] transition duration-300 ease-out hover:shadow-[0_24px_50px_rgba(251,191,36,0.45)] active:scale-[0.98]"
+                    onClick={() => handleAddToCart(item)}
+                    disabled={!item.is_available}
+                  >
+                    <ShoppingCart className="mr-2 h-4 w-4" />
+                    Add to Cart
+                  </Button>
 
                   <div className="grid gap-3 rounded-[18px] border border-white/10 bg-zinc-950/80 p-4 text-sm text-zinc-400 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
                     <div className="flex items-center justify-between gap-3">
