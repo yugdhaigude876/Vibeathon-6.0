@@ -39,7 +39,7 @@ export default function LoginPage() {
         if (role === 'manager' || role === 'admin') {
           router.push('/manager')
         } else if (role === 'staff') {
-          router.push('/staff')
+          router.push('/staff/kitchen')
         } else {
           router.push('/menu')
         }
@@ -82,7 +82,7 @@ export default function LoginPage() {
       if (role === 'manager' || role === 'admin') {
         router.push('/manager')
       } else if (role === 'staff') {
-        router.push('/staff')
+        router.push('/staff/kitchen')
       } else {
         router.push('/dashboard')
       }
