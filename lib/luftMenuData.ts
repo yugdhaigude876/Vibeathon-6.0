@@ -84,15 +84,16 @@ export const LUFT_MENU_ITEMS: LuftMenuItem[] = [
   { name: 'TURKISH 1 FEET KEBAB', description: 'Minced lamb and bell peppers seekh served over naan and pickled veg, sumac, thoum', price: 730, category: 'Charcoal Plates', is_available: true },
   { name: 'Fajita Fish Tikka', description: 'Chili spice marinated fish topped with bellpeppers and cheese', price: 720, category: 'Charcoal Plates', is_available: true },
 
-  // PIZZAZ PIZZA
-  { name: 'Corn And Veg Carne Pizza', description: 'Charred corn, mock meat, pickled chili, onions, mozzarella, cheddar', price: 580, category: 'Pizzaz Pizza', is_available: true },
-  { name: 'Chili Con Carne Pizza', description: 'Spanish minced meat, corn, peppers, pickled chili, onions, mozzarella, cheddar', price: 640, category: 'Pizzaz Pizza', is_available: true },
-  { name: 'Birria Pizza', description: 'Slow cooked lamb, onions, cilantro, mozzarella, cheddar', price: 750, category: 'Pizzaz Pizza', is_available: true },
-  { name: 'Margherita Pizza', description: 'San Marzano sauce, mozzarella, sundried tomato, cherry tomato, basil', price: 570, category: 'Pizzaz Pizza', is_available: true },
-  { name: 'Verdura Paneer Tikka Pizza', description: 'Pesto, mozzarella, wilted spinach, pine nuts, asparagus, tomatoes, caramelized onions and paneer tikka', price: 620, category: 'Pizzaz Pizza', is_available: true },
-  { name: 'Garden Primavera Pizza', description: 'San Marzano sauce, mozzarella, caramelized onion, charred corn, zucchini, bell peppers, parmesan', price: 620, category: 'Pizzaz Pizza', is_available: true },
-  { name: 'Italian Mob Pizza', description: 'San Marzano sauce, mozzarella, Meat balls, smoked chicken, chicken mince', price: 740, category: 'Pizzaz Pizza', is_available: true },
-  { name: 'Pepperoni Pizza', description: 'San Marzano sauce, pepperoni, mozzarella, cheddar', price: 730, category: 'Pizzaz Pizza', is_available: true },
+  // PIZZA & BURGERS
+  { name: 'Classic Gourmet Beef Burger', description: 'Juicy seasoned beef patty with melted cheddar, caramelized onions, crisp lettuce & signature house sauce', price: 680, category: 'Pizza & Burgers', is_available: true },
+  { name: 'Corn And Veg Carne Pizza', description: 'Charred corn, mock meat, pickled chili, onions, mozzarella, cheddar', price: 580, category: 'Pizza & Burgers', is_available: true },
+  { name: 'Chili Con Carne Pizza', description: 'Spanish minced meat, corn, peppers, pickled chili, onions, mozzarella, cheddar', price: 640, category: 'Pizza & Burgers', is_available: true },
+  { name: 'Birria Pizza', description: 'Slow cooked lamb, onions, cilantro, mozzarella, cheddar', price: 750, category: 'Pizza & Burgers', is_available: true },
+  { name: 'Margherita Pizza', description: 'San Marzano sauce, mozzarella, sundried tomato, cherry tomato, basil', price: 570, category: 'Pizza & Burgers', is_available: true },
+  { name: 'Verdura Paneer Tikka Pizza', description: 'Pesto, mozzarella, wilted spinach, pine nuts, asparagus, tomatoes, caramelized onions and paneer tikka', price: 620, category: 'Pizza & Burgers', is_available: true },
+  { name: 'Garden Primavera Pizza', description: 'San Marzano sauce, mozzarella, caramelized onion, charred corn, zucchini, bell peppers, parmesan', price: 620, category: 'Pizza & Burgers', is_available: true },
+  { name: 'Italian Mob Pizza', description: 'San Marzano sauce, mozzarella, Meat balls, smoked chicken, chicken mince', price: 740, category: 'Pizza & Burgers', is_available: true },
+  { name: 'Pepperoni Pizza', description: 'San Marzano sauce, pepperoni, mozzarella, cheddar', price: 730, category: 'Pizza & Burgers', is_available: true },
 
   // GRANDE PLATES
   { name: 'Baked Penne Indienne Rossa', description: 'Creamy tomato pasta with herb baked crust', price: 640, category: 'Grande Plates', is_available: true },
@@ -135,6 +136,14 @@ export const LUFT_MENU_ITEMS: LuftMenuItem[] = [
   { name: 'Grilled Chicken, Padhra Rassa', description: 'Grilled chicken leg with sesame and spices, served with roti or steamed rice', price: 730, category: 'Mains', is_available: true },
   { name: 'Brit Mean Moilee, Sambal Rice', description: 'British curried fish cakes topped with Kerala style coconut fish curry and caviar, served with chili rice', price: 780, category: 'Mains', is_available: true },
   { name: 'Kashmiri Mirch Malai Prawns', description: 'Plump prawns braised with cream, yogurt, fragrant spices and Kashmiri chili. Served with garlic naan or pilaf', price: 780, category: 'Mains', is_available: true },
+
+  // BEVERAGES & MORE
+  { name: 'Classic Cold Coffee', description: 'Blended cold coffee with milk, vanilla ice cream, and chocolate drizzle', price: 290, category: 'Beverages', is_available: true },
+  { name: 'Fresh Mint & Lime Virgin Mojito', description: 'Sparkling mint and lime cooler with crushed ice', price: 260, category: 'Beverages', is_available: true },
+  { name: 'Tropical Passion Fruit Iced Tea', description: 'House brewed black tea infused with passion fruit and citrus', price: 270, category: 'Beverages', is_available: true },
+  { name: 'Sparkling Berry Lemonade', description: 'Fresh berry compote topped with sparkling soda and lemon', price: 280, category: 'Beverages', is_available: true },
+  { name: 'Craft Ginger Ale', description: 'Artisanal spicy ginger ale with fresh mint', price: 240, category: 'Beverages', is_available: true },
+  { name: 'Fresh Watermelon & Basil Cooler', description: 'Pressed watermelon juice infused with sweet basil', price: 280, category: 'Beverages', is_available: true },
 
   // SIDES & DESSERT
   { name: 'Roti / Butter Roti', description: 'Traditional Indian flatbread', price: 90, category: 'Sides', is_available: true },

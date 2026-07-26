@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import { LUFT_MENU_ITEMS } from '@/lib/luftMenuData'
 
 export const runtime = 'nodejs'
 
@@ -90,16 +91,19 @@ export async function POST(request: Request) {
     console.error('Assistant context fetch failed:', error)
   }
 
-  const menuContext = menuItems
-    .slice(0, 12)
-    .map((item) => `${item.name} — ₹${Number(item.price ?? 0).toFixed(2)} | ${item.category ?? 'General'} | ${item.description ?? 'Available today'}`)
-    .join('\n')
+  // Ensure full Luft menu items are always present in the AI assistant context
+  const fullMenuItemsList = [
+    ...LUFT_MENU_ITEMS.map((item) => `${item.name} — ₹${item.price} | ${item.category} | ${item.description || 'Signature dish'}`),
+    ...menuItems.map((item) => `${item.name} — ₹${Number(item.price ?? 0).toFixed(0)} | ${item.category ?? 'General'} | ${item.description ?? 'Available today'}`)
+  ]
+
+  const menuContext = Array.from(new Set(fullMenuItemsList)).join('\n')
 
   const managerContext = ordersSummary || 'No manager data available.'
 
   const systemContext = context === 'manager'
-    ? `You are a restaurant manager assistant. Use the provided operational summary to answer the user. Be concise, practical, and action-oriented. Recommend staffing or reorder actions when appropriate.\n\nOperational summary:\n${managerContext}`
-    : `You are a restaurant customer assistant. Use the provided menu context to answer the user's question with relevant dish recommendations. Be warm, concise, and helpful. Mention price and dietary fit when relevant.\n\nAvailable menu:\n${menuContext || 'No active items available.'}`
+    ? `You are PLATR's restaurant manager assistant. Use the provided operational summary to answer the user. Be concise, practical, and action-oriented. Recommend staffing or reorder actions when appropriate.\n\nOperational summary:\n${managerContext}`
+    : `You are PLATR's gourmet dining concierge assistant. STRICT RULE: You MUST ONLY recommend dishes and drinks that exist in our official restaurant menu listed below. Do not suggest off-menu items. Provide exact dish names, category, price in INR (₹), and dietary type (Veg or Non-Veg) when asked.\n\nOFFICIAL RESTAURANT MENU:\n${menuContext}`
 
   const apiKey = process.env.GEMINI_API_KEY
 

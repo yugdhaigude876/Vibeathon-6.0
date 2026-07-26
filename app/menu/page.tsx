@@ -24,7 +24,7 @@ export interface MenuItem {
 }
 
 const DEFAULT_CATEGORIES = ['All', 'Main', 'Appetizer', 'Side', 'Beverage']
-const DIETARY_OPTIONS = ['All', 'Veg', 'Non-Veg', 'Vegan', 'Gluten-Free']
+const DIETARY_OPTIONS = ['All', 'Veg', 'Non-Veg']
 
 function formatPrice(value: number | null | undefined) {
   return `₹${Number(value || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`
@@ -156,24 +156,19 @@ export default function MenuPage() {
     }
   }, [])
 
-  const getDietaryTags = (item: MenuItem) => {
-    const text = `${item.name} ${item.description || ''}`.toLowerCase()
-    const tags: string[] = []
+  const getDietaryTags = (item: MenuItem): ('veg' | 'non-veg')[] => {
+    const name = (item.name || '').toLowerCase()
+    const desc = (item.description || '').toLowerCase()
+    const text = `${name} ${desc}`
 
-    if (text.includes('vegan') || text.includes('plant') || text.includes('tofu') || text.includes('lentil')) {
-      tags.push('vegan')
-    }
-    if (text.includes('vegetarian') || text.includes('veg') || text.includes('paneer') || text.includes('mushroom')) {
-      tags.push('vegetarian')
-    }
-    if (text.includes('gluten-free') || text.includes('gluten free') || text.includes('rice') || text.includes('corn')) {
-      tags.push('gluten-free')
-    }
-    if (text.includes('dairy-free') || text.includes('lactose-free') || text.includes('without cream') || text.includes('non dairy')) {
-      tags.push('dairy-free')
-    }
+    const nonVegKeywords = [
+      'chicken', 'mutton', 'lamb', 'fish', 'prawn', 'shrimp', 'crab', 'seafood',
+      'beef', 'pepperoni', 'meat', 'chili con carne', 'bacon', 'kebab', 'salmon',
+      'squid', 'carne chicken', 'barba"cola"', 'mob pizza'
+    ]
 
-    return tags
+    const isNonVeg = nonVegKeywords.some((kw) => text.includes(kw))
+    return isNonVeg ? ['non-veg'] : ['veg']
   }
 
   // Dynamic category list combining default categories and database categories
@@ -200,10 +195,11 @@ export default function MenuPage() {
       const matchesPrice =
         priceRange === 'all' || Number(item.price || 0) <= Number(priceRange)
 
-      const dietaryTags = getDietaryTags(item)
+      const tags = getDietaryTags(item)
       const matchesDietary =
         dietaryFilter === 'All' ||
-        dietaryTags.some((tag) => tag === dietaryFilter.toLowerCase())
+        (dietaryFilter === 'Veg' && tags.includes('veg')) ||
+        (dietaryFilter === 'Non-Veg' && tags.includes('non-veg'))
 
       return matchesCategory && matchesSearch && matchesPrice && matchesDietary
     })
@@ -362,66 +358,55 @@ export default function MenuPage() {
           {filteredItems.map((item) => {
             const cartQty = cart[item.id]?.quantity || 0
             const formattedPrice = formatPrice(item.price)
+            const tags = getDietaryTags(item)
+            const isNonVeg = tags.includes('non-veg')
 
             return (
               <Card
                 key={item.id}
-                className={`flex flex-col justify-between overflow-hidden transition-all duration-300 border hover:-translate-y-1 ${
+                className={`flex flex-col justify-between overflow-hidden transition-all duration-300 border hover:-translate-y-1.5 ${
                   !item.is_available
                     ? 'border-zinc-800/60 bg-zinc-900/40 opacity-75'
-                    : 'border-zinc-800 bg-zinc-900/90 hover:border-zinc-700 hover:shadow-lg hover:shadow-amber-500/5'
+                    : 'border-zinc-800 bg-zinc-900/90 hover:border-amber-500/40 hover:shadow-xl hover:shadow-amber-500/10'
                 }`}
               >
-                <div>
-                  {/* Optional Item Image Header */}
-                  {item.image_url ? (
-                    <div className="relative h-44 w-full overflow-hidden bg-zinc-950">
-                      <img
-                        src={item.image_url}
-                        alt={item.name}
-                        className={`h-full w-full object-cover transition-transform duration-300 hover:scale-105 ${
-                          !item.is_available ? 'grayscale opacity-60' : ''
+                <div className="p-5 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      {/* Standard Indian Veg (Green Circle) / Non-Veg (Red Triangle) Indicator */}
+                      <div
+                        className={`h-4 w-4 rounded-sm border flex items-center justify-center shrink-0 ${
+                          isNonVeg ? 'border-red-500' : 'border-emerald-500'
                         }`}
-                      />
-                    </div>
-                  ) : (
-                    <div className="h-28 w-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center border-b border-zinc-800/80">
-                      <Utensils className="h-8 w-8 text-zinc-700" />
-                    </div>
-                  )}
-
-                  <CardHeader className="pb-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <CardTitle className="text-lg font-bold text-zinc-100 leading-snug">
+                        title={isNonVeg ? 'Non-Vegetarian' : 'Vegetarian'}
+                      >
+                        <div
+                          className={`h-2 w-2 ${
+                            isNonVeg ? 'bg-red-500 rounded-full' : 'bg-emerald-500 rounded-full'
+                          }`}
+                        />
+                      </div>
+                      <CardTitle className="text-base font-bold text-zinc-100 leading-snug">
                         {item.name}
                       </CardTitle>
-                      {/* Category Badge */}
-                      <Badge variant="secondary" className="shrink-0 text-[10px] uppercase tracking-wider font-semibold">
-                        {item.category}
-                      </Badge>
                     </div>
-                  </CardHeader>
+                    {/* Category Badge */}
+                    <Badge variant="secondary" className="shrink-0 text-[10px] uppercase tracking-wider font-semibold bg-zinc-800 text-zinc-300 border border-zinc-700">
+                      {item.category}
+                    </Badge>
+                  </div>
 
-                  <CardContent className="pb-4">
-                    {/* Item Description */}
-                    <p className="text-xs text-zinc-400 line-clamp-3 min-h-[2.5rem]">
-                      {item.description || 'No description available for this item.'}
-                    </p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {getDietaryTags(item).slice(0, 2).map((tag) => (
-                        <Badge key={tag} variant="outline" className="border-amber-500/20 text-[10px] uppercase tracking-wide text-amber-300">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  </CardContent>
+                  {/* Item Description */}
+                  <p className="text-xs text-zinc-400 leading-relaxed line-clamp-3 min-h-[2.5rem]">
+                    {item.description || 'No description available for this dish.'}
+                  </p>
                 </div>
 
                 {/* Card Footer with Price and Action Button */}
-                <div className="p-6 pt-0 border-t border-zinc-800/60 mt-2">
+                <div className="p-5 pt-0 border-t border-zinc-800/60 mt-auto">
                   <div className="flex items-center justify-between pt-3">
                     <div>
-                      <span className="text-xs text-zinc-500 block">Price</span>
+                      <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-medium block">Price</span>
                       <span className="text-lg font-extrabold text-amber-400">
                         {formattedPrice}
                       </span>
