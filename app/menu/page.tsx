@@ -259,10 +259,10 @@ export default function MenuPage() {
               className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100"
             >
               <option value="all">Any price</option>
-              <option value="15">₹15</option>
-              <option value="25">₹25</option>
-              <option value="40">₹40</option>
-              <option value="60">₹60</option>
+              <option value="300">Under ₹300</option>
+              <option value="500">Under ₹500</option>
+              <option value="700">Under ₹700</option>
+              <option value="1000">Under ₹1,000</option>
             </select>
           </label>
 

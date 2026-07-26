@@ -176,7 +176,7 @@ export default function OrdersPage() {
                       <div className="text-right">
                         <span className="text-xs text-zinc-500 block">Total Amount</span>
                         <span className="text-lg font-black text-amber-400">
-                          ${Number(order.total_amount || 0).toFixed(2)}
+                          ₹{Number(order.total_amount || 0).toFixed(2)}
                         </span>
                       </div>
 

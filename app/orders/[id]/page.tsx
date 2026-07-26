@@ -423,12 +423,12 @@ export default function OrderTrackingPage() {
                       <div>
                         <h4 className="text-sm font-semibold text-zinc-100">{name}</h4>
                         <p className="text-xs text-zinc-400">
-                          ${Number(item.unit_price || 0).toFixed(2)} each
+                          ₹{Number(item.unit_price || 0).toFixed(2)} each
                         </p>
                       </div>
                     </div>
                     <span className="text-sm font-bold text-amber-400">
-                      ${itemTotal.toFixed(2)}
+                      ₹{itemTotal.toFixed(2)}
                     </span>
                   </div>
                 )
@@ -444,16 +444,16 @@ export default function OrderTrackingPage() {
           <div className="space-y-2.5 pt-2 border-t border-zinc-800 text-sm">
             <div className="flex justify-between text-zinc-400 text-xs">
               <span>Subtotal</span>
-              <span>${subtotal.toFixed(2)}</span>
+              <span>₹{subtotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-zinc-400 text-xs">
-              <span>Government Tax & Service (8.5%)</span>
-              <span>${tax.toFixed(2)}</span>
+              <span>Government Tax & Service (5%)</span>
+              <span>₹{tax.toFixed(2)}</span>
             </div>
             <div className="flex justify-between items-center text-zinc-50 font-bold text-lg pt-3 border-t border-amber-500/20">
               <span className="gold-gradient-text">Total Royal Bill</span>
               <span className="text-xl font-extrabold text-amber-400">
-                ${totalAmount.toFixed(2)}
+                ₹{totalAmount.toFixed(2)}
               </span>
             </div>
           </div>

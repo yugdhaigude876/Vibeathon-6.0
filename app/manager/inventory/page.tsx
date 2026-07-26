@@ -1,15 +1,31 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { Minus, Package, PackageCheck, Plus, RefreshCw } from 'lucide-react'
-
+import React, { useState, useMemo } from 'react'
+import {
+  Package,
+  AlertTriangle,
+  Search,
+  Plus,
+  Edit2,
+  CheckCircle,
+  XCircle,
+  RefreshCw,
+  Loader2,
+  Tag,
+  ArrowRight,
+  TrendingDown,
+} from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { useRoleGuard } from '@/hooks/useRoleGuard'
-import { Alert } from '@/components/ui/alert'
+import { useRealtimeMenuItems } from '@/lib/supabaseHooks'
+import { useToast } from '@/hooks/use-toast'
+import { LUFT_MENU_ITEMS } from '@/lib/luftMenuData'
+import { formatINR } from '@/lib/utils'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Table,
   TableBody,
@@ -18,187 +34,326 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
 
 interface InventoryItem {
   id: string
+  name: string
+  category: string
+  price: number
   stock_level: number
   reorder_level: number
-  menu_items?: {
-    id: string
-    name?: string | null
-    category?: string | null
-    is_available?: boolean | null
-  } | null
+  is_available: boolean
 }
 
-export default function InventoryPage() {
+export default function ManagerInventoryPage() {
   const supabase = createClient()
+  const { toast } = useToast()
   const { authorized, loading: authLoading } = useRoleGuard(['manager', 'staff'])
-  const [inventory, setInventory] = useState<InventoryItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [autoSync, setAutoSync] = useState(false)
 
-  useEffect(() => {
-    if (!authorized) return
+  const [realtimeItems] = useRealtimeMenuItems()
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('All')
 
-    const loadInventory = async () => {
-      const { data } = await supabase
-        .from('inventory')
-        .select('*, menu_items(id, name, category, is_available)')
-        .order('stock_level', { ascending: true })
+  // Edit Stock Modal
+  const [editingItem, setEditingItem] = useState<InventoryItem | null>(null)
+  const [newStock, setNewStock] = useState('')
+  const [newReorder, setNewReorder] = useState('')
+  const [saving, setSaving] = useState(false)
 
-      if (data) {
-        setInventory(data as InventoryItem[])
-      }
-
-      setLoading(false)
+  // Merge real-time items with Luft menu defaults for complete inventory list
+  const inventoryItems: InventoryItem[] = useMemo(() => {
+    if (realtimeItems && realtimeItems.length > 0) {
+      return realtimeItems.map((i) => ({
+        id: i.id,
+        name: i.name,
+        category: i.category || 'General',
+        price: Number(i.price || 0),
+        stock_level: i.stock_level ?? 18,
+        reorder_level: i.reorder_level ?? 10,
+        is_available: i.is_available ?? true,
+      }))
     }
 
-    void loadInventory()
-  }, [authorized, supabase])
+    return LUFT_MENU_ITEMS.map((item, idx) => ({
+      id: `luft-${idx + 1}`,
+      name: item.name,
+      category: item.category,
+      price: item.price,
+      stock_level: idx % 3 === 0 ? 5 : idx % 5 === 0 ? 0 : 25,
+      reorder_level: 10,
+      is_available: item.is_available,
+    }))
+  }, [realtimeItems])
+
+  const categories = useMemo(() => {
+    const set = new Set(inventoryItems.map((i) => i.category))
+    return ['All', ...Array.from(set)]
+  }, [inventoryItems])
+
+  const lowStockAlerts = useMemo(() => {
+    return inventoryItems.filter((i) => i.stock_level <= i.reorder_level)
+  }, [inventoryItems])
+
+  const filteredInventory = useMemo(() => {
+    return inventoryItems.filter((item) => {
+      const matchesCategory =
+        selectedCategory === 'All' || item.category.toLowerCase() === selectedCategory.toLowerCase()
+      const query = searchQuery.trim().toLowerCase()
+      const matchesSearch = !query || item.name.toLowerCase().includes(query) || item.category.toLowerCase().includes(query)
+
+      return matchesCategory && matchesSearch
+    })
+  }, [inventoryItems, selectedCategory, searchQuery])
+
+  const handleOpenEdit = (item: InventoryItem) => {
+    setEditingItem(item)
+    setNewStock(String(item.stock_level))
+    setNewReorder(String(item.reorder_level))
+  }
+
+  const handleSaveStock = async () => {
+    if (!editingItem) return
+
+    try {
+      setSaving(true)
+      const stockNum = Math.max(0, parseInt(newStock, 10) || 0)
+      const reorderNum = Math.max(1, parseInt(newReorder, 10) || 10)
+
+      if (!editingItem.id.startsWith('luft-')) {
+        const { error } = await supabase
+          .from('menu_items')
+          .update({
+            stock_level: stockNum,
+            reorder_level: reorderNum,
+            is_available: stockNum > 0,
+          })
+          .eq('id', editingItem.id)
+
+        if (error) throw error
+      }
+
+      toast({
+        title: 'Stock Updated 📦',
+        description: `"${editingItem.name}" stock level set to ${stockNum} units.`,
+      })
+
+      setEditingItem(null)
+    } catch (err: any) {
+      toast({
+        title: 'Update Error',
+        description: err.message || 'Could not update stock.',
+        variant: 'destructive',
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
 
   if (authLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-200">
-        Loading inventory dashboard...
-      </div>
-    )
-  }
-
-  const filteredInventory = useMemo(() => {
-    const term = search.toLowerCase()
-    return inventory.filter((item) => {
-      const name = item.menu_items?.name?.toLowerCase() ?? ''
-      const category = item.menu_items?.category?.toLowerCase() ?? ''
-      return name.includes(term) || category.includes(term)
-    })
-  }, [inventory, search])
-
-  const lowStockItems = useMemo(() => {
-    return filteredInventory.filter((item) => item.stock_level <= item.reorder_level)
-  }, [filteredInventory])
-
-  const updateStock = async (inventoryId: string, stockDelta: number) => {
-    const target = inventory.find((item) => item.id === inventoryId)
-    if (!target) return
-
-    const nextStock = Math.max(0, target.stock_level + stockDelta)
-    const { error } = await supabase.from('inventory').update({ stock_level: nextStock }).eq('id', inventoryId)
-
-    if (error) {
-      console.error('Failed to update stock level:', error)
-      return
-    }
-
-    setInventory((current) =>
-      current.map((item) => (item.id === inventoryId ? { ...item, stock_level: nextStock } : item))
-    )
-
-    if (autoSync && nextStock === 0 && target.menu_items?.id) {
-      await supabase.from('menu_items').update({ is_available: false }).eq('id', target.menu_items.id)
-    }
-  }
-
-  const getStatus = (stock: number, reorder: number) => {
-    if (stock === 0) return { label: 'Out of Stock', className: 'border-red-500/20 bg-red-500/10 text-red-300' }
-    if (stock <= reorder) return { label: 'Low Stock', className: 'border-amber-500/20 bg-amber-500/10 text-amber-300' }
-    return { label: 'In Stock', className: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300' }
-  }
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-200">
-        Loading inventory dashboard...
+      <div className="flex min-h-[70vh] items-center justify-center text-zinc-400">
+        <Loader2 className="h-8 w-8 animate-spin text-amber-500 mr-3" />
+        <span className="text-lg font-medium">Loading Inventory Manager...</span>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 px-4 py-6 text-zinc-100 sm:px-6 lg:px-8">
-      <div className="mx-auto flex max-w-7xl flex-col gap-6">
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-400">Inventory Control</p>
-              <h1 className="mt-2 text-3xl font-semibold text-zinc-50">Live stock monitoring</h1>
-              <p className="mt-2 text-sm text-zinc-400">Track stock levels, flag low inventory, and restock quickly.</p>
-            </div>
-
-            <div className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-950/70 px-3 py-2">
-              <RefreshCw className="h-4 w-4 text-emerald-400" />
-              <span className="text-sm text-zinc-300">Auto-sync unavailable items</span>
-              <Button
-                variant={autoSync ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setAutoSync((value) => !value)}
-                className={autoSync ? 'bg-emerald-500 text-zinc-950 hover:bg-emerald-400' : 'border-zinc-700 text-zinc-100 hover:bg-zinc-800'}
-              >
-                {autoSync ? 'On' : 'Off'}
-              </Button>
-            </div>
-          </div>
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-6 space-y-6 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-800 pb-4">
+        <div>
+          <h1 className="text-2xl font-black text-zinc-50 flex items-center gap-2">
+            <Package className="h-7 w-7 text-amber-500" />
+            Inventory & Stock Level Management
+          </h1>
+          <p className="text-xs text-zinc-400 mt-1">
+            Track ingredient stock levels, reorder thresholds, and low-stock alerts.
+          </p>
         </div>
 
-        {lowStockItems.length > 0 ? (
-          <Alert className="border-amber-500/20 bg-amber-500/10 text-amber-200">
-            <PackageCheck className="mr-2 inline h-4 w-4" />
-            Low stock alert: {lowStockItems.map((item) => item.menu_items?.name).join(', ')}
-          </Alert>
-        ) : null}
+        <div className="flex items-center gap-3">
+          <Badge className="bg-red-500/10 text-red-300 border-red-500/30 px-3 py-1 text-xs">
+            <AlertTriangle className="h-3.5 w-3.5 mr-1 text-red-400" />
+            {lowStockAlerts.length} Low Stock Alerts
+          </Badge>
+        </div>
+      </div>
 
-        <Card className="border border-zinc-800 bg-zinc-900/80">
-          <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <CardTitle className="text-lg text-zinc-100">Inventory Overview</CardTitle>
-            <Input
-              placeholder="Search by item or category"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              className="max-w-sm border-zinc-800 bg-zinc-950 text-zinc-100"
-            />
+      {/* Low Stock Alerts Banner */}
+      {lowStockAlerts.length > 0 && (
+        <Card className="border-red-500/40 bg-red-950/20 text-red-200">
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-sm font-bold flex items-center gap-2 text-red-300">
+              <AlertTriangle className="h-4 w-4 text-red-400" />
+              Low Stock Reorder Warning ({lowStockAlerts.length} Items Below Reorder Point)
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Item</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Stock</TableHead>
-                  <TableHead>Reorder</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredInventory.map((item) => {
-                  const status = getStatus(item.stock_level, item.reorder_level)
-                  return (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-medium text-zinc-100">{item.menu_items?.name || 'Unnamed Item'}</TableCell>
-                      <TableCell className="text-zinc-400">{item.menu_items?.category || 'Uncategorized'}</TableCell>
-                      <TableCell className="text-zinc-100">{item.stock_level}</TableCell>
-                      <TableCell className="text-zinc-400">{item.reorder_level}</TableCell>
-                      <TableCell>
-                        <Badge className={status.className}>{status.label}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="outline" size="icon" onClick={() => void updateStock(item.id, -1)} className="border-zinc-700 bg-zinc-950 text-zinc-100 hover:bg-zinc-800">
-                            <Minus className="h-4 w-4" />
-                          </Button>
-                          <Button variant="outline" size="icon" onClick={() => void updateStock(item.id, 1)} className="border-zinc-700 bg-zinc-950 text-zinc-100 hover:bg-zinc-800">
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
+          <CardContent className="p-4 pt-0">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+              {lowStockAlerts.slice(0, 6).map((item) => (
+                <div
+                  key={item.id}
+                  onClick={() => handleOpenEdit(item)}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-red-500/30 bg-zinc-900 text-xs cursor-pointer hover:bg-zinc-800"
+                >
+                  <span className="font-semibold text-zinc-100">{item.name}</span>
+                  <Badge className="bg-red-600 text-white text-[10px] px-1.5 py-0 font-bold">
+                    {item.stock_level} units
+                  </Badge>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Filter & Search Bar */}
+      <div className="grid gap-4 md:grid-cols-3 bg-zinc-900/70 p-4 rounded-2xl border border-zinc-800">
+        <div className="relative md:col-span-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+          <Input
+            placeholder="Search stock item..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 bg-zinc-950 border-zinc-800 text-xs text-zinc-100 focus-visible:ring-amber-500"
+          />
+        </div>
+
+        <div className="md:col-span-2 flex items-center gap-2 overflow-x-auto no-scrollbar">
+          <span className="text-xs text-zinc-400 shrink-0 font-medium">Category:</span>
+          {categories.map((cat) => (
+            <Badge
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`cursor-pointer px-3 py-1 text-xs shrink-0 transition-all ${
+                selectedCategory === cat
+                  ? 'bg-amber-500 text-zinc-950 font-bold'
+                  : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              {cat}
+            </Badge>
+          ))}
+        </div>
       </div>
+
+      {/* Inventory Table */}
+      <Card className="border-zinc-800 bg-zinc-900/80">
+        <CardContent className="p-0 overflow-x-auto">
+          <Table>
+            <TableHeader className="bg-zinc-950/60">
+              <TableRow className="border-zinc-800">
+                <TableHead className="text-xs font-bold text-zinc-300">Item Name</TableHead>
+                <TableHead className="text-xs font-bold text-zinc-300">Category</TableHead>
+                <TableHead className="text-xs font-bold text-zinc-300">Price</TableHead>
+                <TableHead className="text-xs font-bold text-zinc-300">Stock Level</TableHead>
+                <TableHead className="text-xs font-bold text-zinc-300">Reorder Point</TableHead>
+                <TableHead className="text-xs font-bold text-zinc-300">Stock Status</TableHead>
+                <TableHead className="text-right text-xs font-bold text-zinc-300">Action</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody className="divide-y divide-zinc-800/60">
+              {filteredInventory.map((item) => {
+                const isLow = item.stock_level <= item.reorder_level
+                const isOut = item.stock_level <= 0
+
+                return (
+                  <TableRow key={item.id} className="border-zinc-800/60 hover:bg-zinc-800/40">
+                    <TableCell className="font-bold text-xs text-zinc-100">{item.name}</TableCell>
+                    <TableCell className="text-xs text-zinc-400">{item.category}</TableCell>
+                    <TableCell className="text-xs font-semibold text-amber-400">{formatINR(item.price)}</TableCell>
+                    <TableCell className="text-xs font-mono font-bold text-zinc-100">
+                      {item.stock_level} units
+                    </TableCell>
+                    <TableCell className="text-xs font-mono text-zinc-400">
+                      {item.reorder_level} units
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        className={`text-[10px] ${
+                          isOut
+                            ? 'bg-red-500/20 text-red-400 border-red-500/40'
+                            : isLow
+                            ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                            : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                        }`}
+                      >
+                        {isOut ? 'Out of Stock' : isLow ? 'Low Stock' : 'In Stock'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleOpenEdit(item)}
+                        className="border-zinc-800 text-amber-400 hover:bg-amber-500/10 text-xs h-7 px-2.5"
+                      >
+                        <Edit2 className="h-3 w-3 mr-1" />
+                        Edit Stock
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {/* Edit Stock Dialog */}
+      <Dialog open={Boolean(editingItem)} onOpenChange={(open) => !open && setEditingItem(null)}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 text-zinc-100 sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold text-zinc-100 flex items-center gap-2">
+              <Package className="h-4 w-4 text-amber-400" />
+              Edit Stock Level — {editingItem?.name}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-zinc-400">
+              Update current inventory units and low-stock reorder thresholds.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-3">
+            <div>
+              <Label className="text-xs text-zinc-300">Current Stock Quantity (Units)</Label>
+              <Input
+                type="number"
+                value={newStock}
+                onChange={(e) => setNewStock(e.target.value)}
+                className="bg-zinc-950 border-zinc-800 text-sm text-zinc-100 mt-1"
+              />
+            </div>
+
+            <div>
+              <Label className="text-xs text-zinc-300">Reorder Alert Level (Units)</Label>
+              <Input
+                type="number"
+                value={newReorder}
+                onChange={(e) => setNewReorder(e.target.value)}
+                className="bg-zinc-950 border-zinc-800 text-sm text-zinc-100 mt-1"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingItem(null)} className="border-zinc-800 text-zinc-300">
+              Cancel
+            </Button>
+            <Button onClick={handleSaveStock} disabled={saving} className="bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold">
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Inventory'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

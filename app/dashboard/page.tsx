@@ -340,7 +340,7 @@ export default function DashboardPage() {
                         <div className="text-right">
                           <span className="text-xs text-zinc-500 block">Total</span>
                           <span className="text-base font-extrabold text-amber-400">
-                            ${Number(order.total_amount || 0).toFixed(2)}
+                            ₹{Number(order.total_amount || 0).toFixed(2)}
                           </span>
                         </div>
 
