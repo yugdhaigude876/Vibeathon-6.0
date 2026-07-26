@@ -26,6 +26,10 @@ export interface MenuItem {
 const DEFAULT_CATEGORIES = ['All', 'Main', 'Appetizer', 'Side', 'Beverage']
 const DIETARY_OPTIONS = ['All', 'Veg', 'Non-Veg', 'Vegan', 'Gluten-Free']
 
+function formatPrice(value: number | null | undefined) {
+  return `₹${Number(value || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`
+}
+
 function getDietaryTags(item: MenuItem): string[] {
   const name = item.name?.toLowerCase() || ''
   const desc = item.description?.toLowerCase() || ''
@@ -45,7 +49,16 @@ export default function MenuPage() {
   const supabase = createClient()
   const { cart, addToCart, removeFromCart, totalItems, subtotal, setIsOpen } = useCart()
 
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([])
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(() => {
+    return LUFT_MENU_ITEMS.map((item, idx) => ({
+      id: `luft-${idx + 1}`,
+      name: item.name,
+      description: item.description,
+      price: item.price,
+      category: item.category,
+      is_available: item.is_available,
+    }))
+  })
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState<string>('')
@@ -67,13 +80,21 @@ export default function MenuPage() {
         is_available: item.is_available,
       }))
 
-      // Fetch database items if any exist and merge/override
       const { data } = await supabase.from('menu_items').select('*')
       if (data && data.length > 0) {
-        // combine DB items and LUFT items, removing duplicates by name
-        const dbNames = new Set(data.map((d: any) => d.name.toLowerCase()))
-        const nonDuplicateLuft = formattedLuft.filter((l) => !dbNames.has(l.name.toLowerCase()))
-        setMenuItems([...(data as MenuItem[]), ...nonDuplicateLuft])
+        const mergedItems = [...formattedLuft]
+        const existingNames = new Set(mergedItems.map((item) => item.name.toLowerCase()))
+
+        ;(data as MenuItem[]).forEach((item) => {
+          if (!item?.name) return
+          const normalizedName = item.name.toLowerCase()
+          if (!existingNames.has(normalizedName)) {
+            mergedItems.push(item)
+            existingNames.add(normalizedName)
+          }
+        })
+
+        setMenuItems(mergedItems)
       } else {
         setMenuItems(formattedLuft)
       }
@@ -340,7 +361,7 @@ export default function MenuPage() {
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredItems.map((item) => {
             const cartQty = cart[item.id]?.quantity || 0
-            const formattedPrice = `₹${Number(item.price || 0).toFixed(2)}`
+            const formattedPrice = formatPrice(item.price)
 
             return (
               <Card
@@ -478,7 +499,7 @@ export default function MenuPage() {
                 <p className="text-xs font-bold uppercase tracking-wider text-zinc-950/80">
                   {totalItems} {totalItems === 1 ? 'Item' : 'Items'} in Cart
                 </p>
-                <p className="text-lg font-black">₹{(subtotal * 1.085).toFixed(2)}</p>
+                <p className="text-lg font-black">{formatPrice(subtotal * 1.085)}</p>
               </div>
             </div>
 
