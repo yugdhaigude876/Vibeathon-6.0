@@ -155,30 +155,26 @@ export function MenuClient({ initialItems }: { initialItems?: MenuItem[] }) {
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] items-start">
-        <div className="relative w-full">
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+      {/* Cohesive Search & Dish Count Bar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 rounded-2xl border border-zinc-800/80 bg-zinc-900/60 p-3 sm:px-5 shadow-lg shadow-black/20">
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
           <Input
             type="text"
-            placeholder="Search items or description..."
+            placeholder="Search dish name, ingredient or description..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-11 pr-4 py-3 rounded-3xl border border-zinc-800 bg-zinc-950 text-zinc-100 placeholder:text-zinc-500 shadow-lg shadow-black/20"
+            className="pl-10 pr-4 py-2.5 bg-zinc-950/80 border-zinc-800/80 text-xs sm:text-sm text-zinc-100 placeholder:text-zinc-500 rounded-xl focus-visible:ring-amber-500"
           />
         </div>
 
-        <div className="rounded-3xl border border-zinc-800 bg-zinc-950/90 p-4 text-sm text-zinc-400 shadow-sm shadow-black/10">
-          <p className="font-semibold text-zinc-100">Menu summary</p>
-          <p className="mt-2 text-xs leading-6">
-            {filteredItems.length} {filteredItems.length === 1 ? 'dish' : 'dishes'} available for your current selection.
-          </p>
-          <div className="mt-4 space-y-2 text-xs text-zinc-400">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex h-2.5 w-2.5 rounded-full bg-amber-400" />Freshly sourced ingredients
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />Seasonal favourites and bold flavours
-            </div>
+        <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto text-xs font-semibold text-zinc-400">
+          <Badge className="bg-amber-500/10 text-amber-400 border border-amber-500/30 px-3 py-1 text-xs font-bold">
+            {filteredItems.length} {filteredItems.length === 1 ? 'Dish' : 'Dishes'} Available
+          </Badge>
+          <div className="hidden md:flex items-center gap-3 text-[11px] border-l border-zinc-800 pl-3">
+            <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-amber-400" />Fresh Ingredients</span>
+            <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-400" />Seasonal Specials</span>
           </div>
         </div>
       </div>
