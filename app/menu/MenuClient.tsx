@@ -1,15 +1,13 @@
 'use client'
 
 import React, { useMemo, useState } from 'react'
-import { Search, ShoppingBag, Utensils, SlidersHorizontal, Leaf, IndianRupee } from 'lucide-react'
+import { Search, Utensils, SlidersHorizontal, Leaf, IndianRupee, Star, Flame, Clock3, ShoppingCart } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
 import { useToast } from '@/hooks/use-toast'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { BreadcrumbNav } from '@/components/BreadcrumbNav'
 import { MenuItem } from '@/lib/types'
 
 const DIETARY_OPTIONS = ['All', 'Veg', 'Non-Veg', 'Vegan', 'Gluten-Free']
@@ -201,43 +199,95 @@ export function MenuClient({ initialItems }: { initialItems?: MenuItem[] }) {
             No menu items matched your filters.
           </div>
         ) : (
-          filteredItems.map((item) => (
-            <Card key={item.id} className="group overflow-hidden rounded-[2rem] border border-zinc-800 bg-zinc-950/90 shadow-xl shadow-black/20 transition duration-300 hover:-translate-y-1 hover:border-amber-500">
-              <CardHeader className="space-y-4 border-b border-zinc-800/70 pb-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <CardTitle className="text-xl font-semibold text-zinc-50">{item.name}</CardTitle>
-                    <p className="text-sm text-zinc-400">{item.category}</p>
+          filteredItems.map((item) => {
+            const dietaryTags = getDietaryTags(item)
+            const popularityLabel = item.name.toLowerCase().includes('truffle') || item.name.toLowerCase().includes('chef') ? "Chef's Choice" : 'Bestseller'
+            const popularityIcon = popularityLabel === "Chef's Choice" ? Star : Flame
+
+            return (
+              <Card
+                key={item.id}
+                className="group flex h-full flex-col overflow-hidden rounded-[24px] border border-white/10 bg-white/5 p-6 shadow-[0_20px_60px_rgba(0,0,0,0.25)] backdrop-blur-xl transition duration-300 ease-out hover:-translate-y-1.5 hover:shadow-[0_24px_80px_rgba(0,0,0,0.35)] hover:border-amber-400/30"
+              >
+                <div className="flex flex-col gap-5 flex-1">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-2">
+                      <CardTitle className="text-[24px] font-bold tracking-tight text-zinc-50">{item.name}</CardTitle>
+                      <p className="text-sm text-zinc-400">{item.category}</p>
+                    </div>
+                    <div className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F1C85C] to-[#B68A25] px-4 py-2 text-[22px] font-semibold text-zinc-950 shadow-[0_10px_28px_rgba(212,175,55,0.25)]">
+                      {formatPrice(item.price)}
+                    </div>
                   </div>
-                  <div className="rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-zinc-950 shadow-sm shadow-amber-500/20">
-                    {formatPrice(item.price)}
+
+                  <div className="grid gap-3">
+                    <div className="flex flex-wrap gap-2">
+                      {dietaryTags.map((tag) => {
+                        const lower = tag.toLowerCase()
+                        const icon = lower.includes('veg') ? Leaf : lower.includes('spicy') ? Flame : lower.includes('gluten') ? Clock3 : Star
+                        const bg = lower.includes('vegan') ? 'bg-emerald-500/10 text-emerald-200' : lower.includes('veg') ? 'bg-amber-500/10 text-amber-200' : lower.includes('spicy') ? 'bg-rose-500/10 text-rose-200' : lower.includes('gluten') ? 'bg-slate-600/10 text-slate-200' : 'bg-zinc-900/80 text-zinc-100'
+
+                        return (
+                          <span
+                            key={tag}
+                            className={`inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] ${bg}`}
+                          >
+                            {React.createElement(icon, { className: 'h-3.5 w-3.5' })}
+                            {tag}
+                          </span>
+                        )
+                      })}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3 text-sm text-zinc-400">
+                      <span className="inline-flex items-center gap-2 rounded-full bg-zinc-900/80 px-3 py-2 text-zinc-200 shadow-[0_8px_20px_rgba(0,0,0,0.15)]">
+                        <Star className="h-4 w-4 text-amber-400" />
+                        <span className="font-semibold text-zinc-50">4.8</span>
+                        <span className="text-zinc-400">(124 Reviews)</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="relative overflow-hidden text-sm leading-7 text-zinc-400" style={{ WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', display: '-webkit-box', overflow: 'hidden' }}>
+                    {item.description || 'A beautifully composed plate with layered aromas and refined balance.'}
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {getDietaryTags(item).map((tag) => (
-                    <span key={tag} className="rounded-full border border-zinc-800 bg-zinc-900/90 px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-zinc-300">
-                      {tag}
-                    </span>
-                  ))}
+
+                <div className="mt-6 grid gap-4">
+                  <div className="flex items-center justify-between gap-4 text-sm text-zinc-400">
+                    <span className="font-semibold text-zinc-50">{formatPrice(item.price)}</span>
+                    <Button
+                      className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-orange-500 via-amber-400 to-orange-500 px-6 py-3 text-sm font-semibold text-zinc-950 shadow-[0_18px_40px_rgba(251,191,36,0.35)] transition duration-300 ease-out hover:shadow-[0_24px_50px_rgba(251,191,36,0.45)] active:scale-[0.98]"
+                      onClick={() => handleAddToCart(item)}
+                      disabled={!item.is_available}
+                    >
+                      <ShoppingCart className="mr-2 h-4 w-4" />
+                      Add to Cart
+                    </Button>
+                  </div>
+
+                  <div className="grid gap-3 rounded-[18px] border border-white/10 bg-zinc-950/80 p-4 text-sm text-zinc-400 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="inline-flex items-center gap-2 text-amber-200">
+                        <Clock3 className="h-4 w-4" />
+                        <span>15 mins</span>
+                      </div>
+                      <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-[11px] uppercase tracking-[0.26em] text-amber-200">
+                        {React.createElement(popularityIcon, { className: 'h-4 w-4' })}
+                        {popularityLabel}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between text-xs uppercase tracking-[0.26em] text-zinc-500">
+                      <span className={item.is_available ? 'text-emerald-300' : 'text-rose-300'}>
+                        {item.is_available ? '🟢 In Stock' : '🔴 Out of Stock'}
+                      </span>
+                      <span className="text-zinc-500">Premium service</span>
+                    </div>
+                  </div>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-5 p-0 pt-4">
-                <p className="min-h-[4.5rem] text-sm leading-6 text-zinc-400">{item.description || 'A royal specialty from our menu.'}</p>
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <Button
-                    className="w-full bg-amber-600 text-zinc-950 transition hover:bg-amber-500 disabled:cursor-not-allowed disabled:bg-zinc-800"
-                    onClick={() => handleAddToCart(item)}
-                    disabled={!item.is_available}
-                  >
-                    {item.is_available ? 'Add to Cart' : 'Unavailable'}
-                  </Button>
-                  <span className="text-xs uppercase tracking-[0.24em] text-zinc-500">
-                    {item.is_available ? 'In stock' : 'Out of stock'}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+              </Card>
+            )
+          })
         )}
       </div>
     </div>

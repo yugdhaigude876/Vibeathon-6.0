@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from './supabase'
-import type { MenuItem } from '@/app/menu/page'
+import type { MenuItem } from '@/lib/types'
 
 export interface OrderItem {
   id: string
