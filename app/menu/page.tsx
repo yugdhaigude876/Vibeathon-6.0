@@ -107,10 +107,13 @@ export default function MenuPage() {
         const mergedItems = [...formattedLuft]
         const existingNames = new Set(mergedItems.map((item) => item.name.toLowerCase()))
 
+        // Exclude old sample items that are not part of Luft Ka Menu
+        const oldSampleNames = ['burger', 'pizza margherita', 'caesar salad', 'fries', 'cola', 'espresso']
+
         ;(data as MenuItem[]).forEach((item) => {
           if (!item?.name) return
           const normalizedName = item.name.toLowerCase()
-          if (!existingNames.has(normalizedName)) {
+          if (!existingNames.has(normalizedName) && !oldSampleNames.includes(normalizedName)) {
             mergedItems.push(item)
             existingNames.add(normalizedName)
           }
@@ -377,24 +380,19 @@ export default function MenuPage() {
                 }`}
               >
                 <div className="p-5 space-y-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                      {/* Standard Indian Veg (Green Circle) / Non-Veg (Red Triangle) Indicator */}
+                  <div className="flex items-center justify-between gap-2">
+                    {/* Standard Indian Veg (Green Circle) / Non-Veg (Red Dot) Indicator */}
+                    <div
+                      className={`h-4 w-4 rounded-sm border flex items-center justify-center shrink-0 ${
+                        isNonVeg ? 'border-red-500' : 'border-emerald-500'
+                      }`}
+                      title={isNonVeg ? 'Non-Vegetarian' : 'Vegetarian'}
+                    >
                       <div
-                        className={`h-4 w-4 rounded-sm border flex items-center justify-center shrink-0 ${
-                          isNonVeg ? 'border-red-500' : 'border-emerald-500'
+                        className={`h-2 w-2 ${
+                          isNonVeg ? 'bg-red-500 rounded-full' : 'bg-emerald-500 rounded-full'
                         }`}
-                        title={isNonVeg ? 'Non-Vegetarian' : 'Vegetarian'}
-                      >
-                        <div
-                          className={`h-2 w-2 ${
-                            isNonVeg ? 'bg-red-500 rounded-full' : 'bg-emerald-500 rounded-full'
-                          }`}
-                        />
-                      </div>
-                      <CardTitle className="text-base font-bold text-zinc-100 leading-snug">
-                        {item.name}
-                      </CardTitle>
+                      />
                     </div>
                     {/* Category Badge */}
                     <Badge variant="secondary" className="shrink-0 text-[10px] uppercase tracking-wider font-semibold bg-zinc-800 text-zinc-300 border border-zinc-700">
@@ -402,31 +400,29 @@ export default function MenuPage() {
                     </Badge>
                   </div>
 
+                  <CardTitle className="text-base font-bold text-zinc-100 leading-snug break-words">
+                    {item.name}
+                  </CardTitle>
+
                   {/* Item Description */}
                   <p className="text-xs text-zinc-400 leading-relaxed line-clamp-3 min-h-[2.5rem]">
                     {item.description || 'No description available for this dish.'}
                   </p>
 
-                  {/* Dietary Preference Badges */}
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {tags.map((tag) => (
-                      <Badge
-                        key={tag}
-                        variant="outline"
-                        className={`text-[10px] uppercase font-bold px-2 py-0.5 ${
-                          tag === 'non-veg'
-                            ? 'border-red-500/40 text-red-400 bg-red-950/20'
-                            : tag === 'veg'
-                            ? 'border-emerald-500/40 text-emerald-400 bg-emerald-950/20'
-                            : tag === 'vegan'
-                            ? 'border-lime-500/40 text-lime-400 bg-lime-950/20'
-                            : 'border-amber-500/40 text-amber-300 bg-amber-950/20'
-                        }`}
-                      >
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
+                  {/* Additional Badges (e.g. Vegan, Spicy) */}
+                  {tags.filter(t => t !== 'veg' && t !== 'non-veg').length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {tags.filter(t => t !== 'veg' && t !== 'non-veg').map((tag) => (
+                        <Badge
+                          key={tag}
+                          variant="outline"
+                          className="text-[10px] uppercase font-bold px-2 py-0.5 border-lime-500/40 text-lime-400 bg-lime-950/20"
+                        >
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Card Footer with Price and Action Button */}
