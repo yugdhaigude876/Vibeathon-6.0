@@ -145,22 +145,36 @@ export default function DashboardPage() {
     // Real-time: refetch when a new order lands in Supabase for this user
     let realtimeChannel: ReturnType<typeof supabase.channel> | null = null
 
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    async function setupRealtime() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
       if (!user) return
-      realtimeChannel = supabase
-        .channel('dashboard_orders_realtime')
+
+      const channelName = `dashboard_orders_realtime_${user.id}_${Math.random().toString(36).slice(2)}`
+      realtimeChannel = supabase.channel(channelName)
+
+      realtimeChannel
         .on(
           'postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'orders', filter: `customer_id=eq.${user.id}` },
-          () => { loadDashboardData() }
+          () => {
+            loadDashboardData()
+          }
         )
         .on(
           'postgres_changes',
           { event: 'UPDATE', schema: 'public', table: 'orders', filter: `customer_id=eq.${user.id}` },
-          () => { loadDashboardData() }
+          () => {
+            loadDashboardData()
+          }
         )
-        .subscribe()
-    })
+
+      await realtimeChannel.subscribe()
+    }
+
+    setupRealtime()
 
     // Refetch when user returns to this tab (handles localStorage-only orders)
     const handleVisibility = () => {
