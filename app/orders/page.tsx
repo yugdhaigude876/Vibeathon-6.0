@@ -44,7 +44,7 @@ export default function OrdersPage() {
       const { data, error: fetchErr } = await query
 
       if (fetchErr) {
-        console.error('Error fetching orders:', fetchErr)
+        console.error('Error fetching orders:', fetchErr?.message || fetchErr)
         setError(fetchErr.message)
       } else if (data) {
         setOrders(data as Order[])

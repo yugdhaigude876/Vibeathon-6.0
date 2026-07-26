@@ -65,7 +65,7 @@ export default function MenuPage() {
         .order('name', { ascending: true })
 
       if (fetchError) {
-        console.error('Error fetching menu items:', fetchError)
+        console.warn('Notice fetching menu items:', fetchError?.message || fetchError)
         // Use Luft Ka Menu fallback
         const formattedLuft: MenuItem[] = LUFT_MENU_ITEMS.map((item, idx) => ({
           id: `luft-${idx + 1}`,
