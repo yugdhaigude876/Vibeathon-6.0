@@ -1,8 +1,10 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Bell, CheckCircle2, Clock, UserPlus, Users } from 'lucide-react'
 
+import { createClient } from '@/lib/supabase'
+import { useRoleGuard } from '@/hooks/useRoleGuard'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -49,6 +51,7 @@ const initialQueue: QueueParty[] = [
 ]
 
 export default function QueuePage() {
+  const { authorized, loading: authLoading } = useRoleGuard(['staff', 'manager'])
   const { toast } = useToast()
   const [queue, setQueue] = useState<QueueParty[]>(initialQueue)
   const [form, setForm] = useState({
@@ -56,6 +59,18 @@ export default function QueuePage() {
     phone_number: '',
     party_size: '2',
   })
+
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-200">
+        Loading...
+      </div>
+    )
+  }
+
+  if (!authorized) {
+    return null
+  }
 
   const activeQueue = useMemo(() => queue.filter((party) => party.status !== 'seated' && party.status !== 'cancelled'), [queue])
 

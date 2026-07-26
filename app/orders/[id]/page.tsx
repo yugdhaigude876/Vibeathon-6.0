@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { useToast } from '@/hooks/use-toast'
+import { useRoleGuard } from '@/hooks/useRoleGuard'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -85,6 +86,7 @@ export default function OrderTrackingPage() {
   const supabase = createClient()
   const { toast } = useToast()
 
+  const { authorized, loading: authLoading } = useRoleGuard(['customer'])
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
@@ -129,6 +131,7 @@ export default function OrderTrackingPage() {
 
   // Real-time listener for orders table updates
   useEffect(() => {
+    if (!authorized) return
     fetchOrder()
 
     if (!id) return
@@ -161,7 +164,7 @@ export default function OrderTrackingPage() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [id])
+  }, [authorized, id])
 
   // Compute current step index
   const currentStepIndex = useMemo(() => {

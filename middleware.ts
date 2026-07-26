@@ -1,7 +1,8 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-const CUSTOMER_ROUTES = ['/menu', '/orders', '/reservations', '/dashboard']
+const CUSTOMER_ONLY_ROUTES = ['/menu', '/orders', '/reservations']
+const AUTHENTICATED_ROUTES = ['/dashboard']
 const STAFF_MANAGER_ROUTES = ['/staff', '/manager']
 const PUBLIC_ROUTES = ['/login', '/signup']
 
@@ -9,8 +10,12 @@ function isPublicRoute(pathname: string) {
   return PUBLIC_ROUTES.includes(pathname) || pathname.startsWith('/api/auth') || pathname.startsWith('/api/ai')
 }
 
-function isCustomerRoute(pathname: string) {
-  return CUSTOMER_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))
+function isCustomerOnlyRoute(pathname: string) {
+  return CUSTOMER_ONLY_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))
+}
+
+function isAuthenticatedRoute(pathname: string) {
+  return AUTHENTICATED_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))
 }
 
 function isStaffOrManagerRoute(pathname: string) {
@@ -112,7 +117,18 @@ export async function middleware(req: NextRequest) {
     return response
   }
 
-  if (isCustomerRoute(pathname)) {
+  if (isCustomerOnlyRoute(pathname)) {
+    if (role !== 'customer') {
+      const redirectUrl = req.nextUrl.clone()
+      redirectUrl.pathname = '/dashboard'
+      redirectUrl.searchParams.set('unauthorized', '1')
+      return NextResponse.redirect(redirectUrl)
+    }
+
+    return response
+  }
+
+  if (isAuthenticatedRoute(pathname)) {
     return response
   }
 

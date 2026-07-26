@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Minus, Package, PackageCheck, Plus, RefreshCw } from 'lucide-react'
 
 import { createClient } from '@/lib/supabase'
+import { useRoleGuard } from '@/hooks/useRoleGuard'
 import { Alert } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -32,37 +32,17 @@ interface InventoryItem {
 }
 
 export default function InventoryPage() {
-  const router = useRouter()
   const supabase = createClient()
+  const { authorized, loading: authLoading } = useRoleGuard(['manager', 'staff'])
   const [inventory, setInventory] = useState<InventoryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [autoSync, setAutoSync] = useState(false)
 
   useEffect(() => {
+    if (!authorized) return
+
     const loadInventory = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      if (!user) {
-        router.replace('/menu')
-        return
-      }
-
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .maybeSingle()
-
-      const role = profileData?.role?.toLowerCase() ?? 'customer'
-
-      if (role !== 'manager' && role !== 'staff') {
-        router.replace('/menu')
-        return
-      }
-
       const { data } = await supabase
         .from('inventory')
         .select('*, menu_items(id, name, category, is_available)')
@@ -76,7 +56,15 @@ export default function InventoryPage() {
     }
 
     void loadInventory()
-  }, [router, supabase])
+  }, [authorized, supabase])
+
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-200">
+        Loading inventory dashboard...
+      </div>
+    )
+  }
 
   const filteredInventory = useMemo(() => {
     const term = search.toLowerCase()

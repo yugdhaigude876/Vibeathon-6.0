@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Award, DollarSign, ShoppingCart, TrendingUp, Users } from 'lucide-react'
 
 import { createClient } from '@/lib/supabase'
+import { useRoleGuard } from '@/hooks/useRoleGuard'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -50,36 +50,26 @@ interface Order {
 }
 
 export default function ManagerPage() {
-  const router = useRouter()
   const supabase = createClient()
+  const { authorized, loading: authLoading } = useRoleGuard(['manager', 'staff'])
   const [profile, setProfile] = useState<Profile | null>(null)
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
 
   useEffect(() => {
+    if (!authorized) return
+
     const loadData = async () => {
       const {
         data: { user },
       } = await supabase.auth.getUser()
 
-      if (!user) {
-        router.replace('/menu')
-        return
-      }
-
       const { data: profileData } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', user?.id)
         .maybeSingle()
-
-      const role = profileData?.role?.toLowerCase() ?? 'customer'
-
-      if (role !== 'manager' && role !== 'staff') {
-        router.replace('/menu')
-        return
-      }
 
       setProfile(profileData as Profile | null)
 
@@ -96,7 +86,15 @@ export default function ManagerPage() {
     }
 
     void loadData()
-  }, [router, supabase])
+  }, [authorized, supabase])
+
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-200">
+        Loading manager dashboard...
+      </div>
+    )
+  }
 
   const today = new Date()
   const startOfDay = new Date(today)

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { useRoleGuard } from '@/hooks/useRoleGuard'
 import { AlertTriangle, Check, Clock, Flame, Utensils } from 'lucide-react'
 
 import { createClient } from '@/lib/supabase'
@@ -93,7 +94,11 @@ export default function KitchenPage() {
     }
   }
 
+  const { authorized, loading: authLoading } = useRoleGuard(['staff', 'manager'])
+
   useEffect(() => {
+    if (!authorized) return
+
     let isMounted = true
 
     const loadData = async () => {
@@ -132,7 +137,7 @@ export default function KitchenPage() {
       window.clearInterval(timer)
       supabase.removeChannel(channel)
     }
-  }, [supabase])
+  }, [router, supabase])
 
   const groupedOrders = useMemo(() => {
     return {

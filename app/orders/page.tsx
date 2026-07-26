@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Crown, ClipboardList, Clock, ArrowRight, Utensils, AlertCircle, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
+import { useRoleGuard } from '@/hooks/useRoleGuard'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -19,6 +20,7 @@ interface Order {
 
 export default function OrdersPage() {
   const supabase = createClient()
+  const { authorized, loading: authLoading } = useRoleGuard(['customer'])
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
@@ -31,11 +33,12 @@ export default function OrdersPage() {
         data: { user },
       } = await supabase.auth.getUser()
 
-      let query = supabase.from('orders').select('*').order('created_at', { ascending: false })
-
-      if (user) {
-        query = query.eq('customer_id', user.id)
+      if (!user) {
+        return
       }
+
+      let query = supabase.from('orders').select('*').order('created_at', { ascending: false })
+      query = query.eq('customer_id', user.id)
 
       const { data, error: fetchErr } = await query
 
@@ -54,6 +57,8 @@ export default function OrdersPage() {
   }
 
   useEffect(() => {
+    if (!authorized) return
+
     fetchOrders()
 
     // Real-time listener for orders table
@@ -71,7 +76,7 @@ export default function OrdersPage() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [])
+  }, [authorized])
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 py-6 px-4 sm:px-0">

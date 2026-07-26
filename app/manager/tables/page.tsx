@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Armchair, Circle, Grid, UserCheck } from 'lucide-react'
 
 import { createClient } from '@/lib/supabase'
+import { useRoleGuard } from '@/hooks/useRoleGuard'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -43,46 +43,33 @@ const statusLabels: Record<TableRecord['status'], string> = {
 }
 
 export default function TablesPage() {
-  const router = useRouter()
   const supabase = createClient()
+  const { authorized, loading: authLoading } = useRoleGuard(['manager', 'staff'])
   const [tables, setTables] = useState<TableRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedTable, setSelectedTable] = useState<TableRecord | null>(null)
 
   useEffect(() => {
+    if (!authorized) return
+
     const loadTables = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      if (!user) {
-        router.replace('/menu')
-        return
-      }
-
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .maybeSingle()
-
-      const role = profileData?.role?.toLowerCase() ?? 'customer'
-
-      if (role !== 'manager' && role !== 'staff') {
-        router.replace('/menu')
-        return
-      }
-
       const { data } = await supabase.from('tables').select('*').order('number', { ascending: true })
       if (data) {
         setTables(data as TableRecord[])
       }
-
       setLoading(false)
     }
 
     void loadTables()
-  }, [router, supabase])
+  }, [authorized, supabase])
+
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-200">
+        Loading table map...
+      </div>
+    )
+  }
 
   const stats = useMemo(() => {
     const totalCapacity = tables.reduce((sum, table) => sum + table.capacity, 0)
