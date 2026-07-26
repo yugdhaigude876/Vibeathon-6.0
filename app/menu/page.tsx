@@ -137,49 +137,51 @@ export default function MenuPage() {
   }, [menuItems, selectedCategory, searchQuery])
 
   return (
-    <div className="space-y-6 pb-24">
-      {/* Header section */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-zinc-50 flex items-center gap-2">
-            <Utensils className="h-7 w-7 text-amber-500" />
-            Digital Menu
-          </h1>
-          <p className="text-sm text-zinc-400 mt-1">
-            Explore our curated culinary creations and add items directly to your cart.
-          </p>
-        </div>
+    <div className="relative z-10 space-y-6 pb-24">
+      <div className="glass-panel overflow-hidden p-5 sm:p-8">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl space-y-3">
+            <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-amber-300">
+              <Utensils className="h-3.5 w-3.5" />
+              Signature Dining
+            </div>
+            <h1 className="flex items-center gap-2 text-3xl font-bold tracking-tight text-zinc-50 sm:text-4xl">
+              <span className="gold-gradient-text">Royal Menu</span>
+            </h1>
+            <p className="text-sm leading-6 text-zinc-400 sm:text-base">
+              Discover curated dishes, seamless ordering, and a refined in-app dining experience designed for comfort and speed.
+            </p>
+          </div>
 
-        {/* Real-time search input */}
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-          <Input
-            type="text"
-            placeholder="Search items or description..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 bg-zinc-900 border-zinc-800 text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-amber-500"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400 hover:text-zinc-200"
-            >
-              Clear
-            </button>
-          )}
+          <div className="relative w-full lg:max-w-sm">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+            <Input
+              type="text"
+              placeholder="Search dishes or notes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 border-white/10 bg-zinc-950/70 text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-amber-500"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400 transition-colors hover:text-zinc-200"
+              >
+                Clear
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Sticky Category Filter Tabs */}
-      <div className="sticky top-14 z-30 bg-zinc-950/90 backdrop-blur-md py-3 -mx-4 px-4 sm:-mx-6 sm:px-6 border-b border-zinc-800/80">
+      <div className="sticky top-14 z-30 -mx-4 border-b border-white/10 bg-zinc-950/70 px-4 py-3 backdrop-blur-xl sm:-mx-6 sm:px-6">
         <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
-          <TabsList className="w-full justify-start overflow-x-auto no-scrollbar bg-zinc-900/80 p-1 border border-zinc-800">
+          <TabsList className="w-full justify-start overflow-x-auto border border-white/10 bg-zinc-900/70 p-1 no-scrollbar">
             {categories.map((cat) => (
               <TabsTrigger
                 key={cat}
                 value={cat}
-                className="capitalize text-xs sm:text-sm px-4 py-1.5 shrink-0 data-[state=active]:bg-amber-600 data-[state=active]:text-zinc-950 font-medium"
+                className="shrink-0 px-4 py-1.5 text-xs font-semibold capitalize text-zinc-400 sm:text-sm data-[state=active]:bg-amber-600 data-[state=active]:text-zinc-950"
               >
                 {cat}
               </TabsTrigger>
@@ -254,10 +256,10 @@ export default function MenuPage() {
             return (
               <Card
                 key={item.id}
-                className={`flex flex-col justify-between overflow-hidden transition-all border ${
+                className={`group flex flex-col justify-between overflow-hidden transition-all duration-300 ${
                   !item.is_available
-                    ? 'border-zinc-800/60 bg-zinc-900/40 opacity-75'
-                    : 'border-zinc-800 bg-zinc-900/90 hover:border-zinc-700 hover:shadow-lg hover:shadow-amber-500/5'
+                    ? 'border border-white/10 bg-zinc-900/40 opacity-75'
+                    : 'border border-white/10 bg-zinc-900/75 hover:-translate-y-1 hover:border-amber-500/30 hover:shadow-[0_20px_60px_rgba(245,158,11,0.12)]'
                 }`}
               >
                 <div>
@@ -267,40 +269,38 @@ export default function MenuPage() {
                       <img
                         src={item.image_url}
                         alt={item.name}
-                        className={`h-full w-full object-cover transition-transform duration-300 hover:scale-105 ${
+                        className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 ${
                           !item.is_available ? 'grayscale opacity-60' : ''
                         }`}
                       />
+                      <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/80 via-transparent to-transparent" />
                     </div>
                   ) : (
-                    <div className="h-28 w-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center border-b border-zinc-800/80">
-                      <Utensils className="h-8 w-8 text-zinc-700" />
+                    <div className="flex h-32 w-full items-center justify-center border-b border-white/10 bg-gradient-to-br from-amber-500/15 via-zinc-900 to-zinc-950">
+                      <Utensils className="h-8 w-8 text-amber-400/70" />
                     </div>
                   )}
 
                   <CardHeader className="pb-2">
                     <div className="flex items-start justify-between gap-2">
-                      <CardTitle className="text-lg font-bold text-zinc-100 leading-snug">
+                      <CardTitle className="text-lg font-bold leading-snug text-zinc-100">
                         {item.name}
                       </CardTitle>
-                      {/* Category Badge */}
-                      <Badge variant="secondary" className="shrink-0 text-[10px] uppercase tracking-wider font-semibold">
+                      <Badge variant="secondary" className="shrink-0 border border-amber-500/20 bg-amber-500/10 text-[10px] font-semibold uppercase tracking-wider text-amber-200">
                         {item.category}
                       </Badge>
                     </div>
                   </CardHeader>
 
                   <CardContent className="pb-4">
-                    {/* Item Description */}
-                    <p className="text-xs text-zinc-400 line-clamp-3 min-h-[2.5rem]">
+                    <p className="min-h-[2.5rem] text-xs leading-5 text-zinc-400 line-clamp-3">
                       {item.description || 'No description available for this item.'}
                     </p>
                   </CardContent>
                 </div>
 
-                {/* Card Footer with Price and Action Button */}
-                <div className="p-6 pt-0 border-t border-zinc-800/60 mt-2">
-                  <div className="flex items-center justify-between pt-3">
+                <div className="mt-2 border-t border-white/10 p-6 pt-4">
+                  <div className="flex items-center justify-between">
                     <div>
                       <span className="text-xs text-zinc-500 block">Price</span>
                       <span className="text-lg font-extrabold text-amber-400">
@@ -326,14 +326,14 @@ export default function MenuPage() {
                       <Button
                         size="sm"
                         onClick={() => addToCart(item)}
-                        className="bg-amber-600 text-zinc-950 font-semibold hover:bg-amber-500 transition-colors flex items-center gap-1.5 shadow-sm"
+                        className="flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-yellow-500 font-semibold text-zinc-950 shadow-[0_8px_24px_rgba(245,158,11,0.25)] hover:brightness-110"
                       >
                         <Plus className="h-4 w-4" />
                         Add to Cart
                       </Button>
                     ) : (
                       /* Quantity Selector (+/- buttons) */
-                      <div className="flex items-center gap-2 rounded-lg bg-zinc-800 p-1 border border-zinc-700">
+                      <div className="flex items-center gap-2 rounded-full border border-white/10 bg-zinc-800/80 p-1">
                         <Button
                           variant="ghost"
                           size="icon"
@@ -367,8 +367,8 @@ export default function MenuPage() {
 
       {/* Floating Bottom Cart Bar */}
       {totalItems > 0 && (
-        <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-8 sm:w-96 z-50 animate-in fade-in slide-in-from-bottom-5">
-          <div className="flex items-center justify-between rounded-xl bg-amber-600 p-4 text-zinc-950 shadow-2xl shadow-amber-600/30 border border-amber-500">
+        <div className="fixed bottom-4 left-4 right-4 z-50 animate-in fade-in slide-in-from-bottom-5 sm:left-auto sm:right-8 sm:w-96">
+          <div className="flex items-center justify-between rounded-[1.25rem] border border-amber-500/30 bg-gradient-to-r from-amber-500 to-yellow-500 p-4 text-zinc-950 shadow-[0_20px_80px_rgba(245,158,11,0.25)]">
             <div className="flex items-center gap-3">
               <div className="relative flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-950/20 text-zinc-950">
                 <ShoppingBag className="h-5 w-5" />
