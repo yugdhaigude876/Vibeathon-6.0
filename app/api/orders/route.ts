@@ -154,7 +154,6 @@ export async function POST(request: Request) {
         status: 'pending',
         total_amount: finalTotal,
         notes: combinedNotes,
-        table_number: tableNum || null,
       })
       .select()
       .single()
@@ -169,7 +168,6 @@ export async function POST(request: Request) {
           total_amount: finalTotal,
           status: 'pending',
           notes: combinedNotes,
-          table_number: tableNum || null,
         })
         .select()
         .single()
