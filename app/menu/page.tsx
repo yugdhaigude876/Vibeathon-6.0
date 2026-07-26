@@ -53,7 +53,7 @@ export default async function MenuPage() {
   return (
     <div className="space-y-6">
       <BreadcrumbNav items={[{ label: 'Digital Menu' }]} />
-      <MenuClient initialMenuItems={menuItems} />
+      <MenuClient initialItems={menuItems} />
     </div>
   )
 }
