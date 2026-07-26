@@ -257,16 +257,14 @@ export default function ReservationsPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-8 py-6 px-4 sm:px-0 pb-16">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-amber-500/20 pb-6">
-        <div>
-          <div className="flex items-center gap-2">
-            <Crown className="h-6 w-6 text-amber-400" />
-            <h1 className="text-3xl font-extrabold gold-gradient-text">Royal Table Reservations</h1>
-          </div>
-          <p className="text-sm text-zinc-400 mt-1">
-            Reserve an exclusive dining table for your party and manage upcoming visits.
-          </p>
+      <div className="flex flex-col items-center justify-center text-center gap-2 border-b border-amber-500/20 pb-6">
+        <div className="flex items-center justify-center gap-2">
+          <Crown className="h-7 w-7 text-amber-400" />
+          <h1 className="text-3xl sm:text-4xl font-extrabold gold-gradient-text">Royal Table Reservations</h1>
         </div>
+        <p className="text-sm text-zinc-400 max-w-lg">
+          Reserve an exclusive dining table for your party and manage upcoming visits seamlessly.
+        </p>
       </div>
 
       {/* Tabs View */}
@@ -291,8 +289,8 @@ export default function ReservationsPage() {
         {/* Tab 1: Book a Table Form */}
         <TabsContent value="book" className="mt-6">
           <Card className="royal-card border border-amber-500/30">
-            <CardHeader className="border-b border-amber-500/20 pb-4">
-              <CardTitle className="text-xl font-bold text-zinc-100 flex items-center gap-2">
+            <CardHeader className="border-b border-amber-500/20 pb-4 text-center">
+              <CardTitle className="text-xl font-bold text-zinc-100 flex items-center justify-center gap-2">
                 <Sparkles className="h-5 w-5 text-amber-400" />
                 Reserve Your Dining Experience
               </CardTitle>
@@ -388,11 +386,11 @@ export default function ReservationsPage() {
                   </label>
                   <Input
                     type="tel"
-                    placeholder="e.g. +1 (555) 234-5678"
+                    placeholder="e.g. +91 98765 43210"
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
                     required
-                    className="bg-zinc-900 border-zinc-800 text-zinc-100 placeholder:text-zinc-500 max-w-md"
+                    className="bg-zinc-900 border-zinc-800 text-zinc-100 placeholder:text-zinc-500 w-full"
                   />
                 </div>
 
@@ -400,7 +398,7 @@ export default function ReservationsPage() {
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="royal-button w-full sm:w-auto px-8 py-5 text-base"
+                  className="royal-button w-full py-5 text-base"
                 >
                   {isSubmitting ? (
                     <>
