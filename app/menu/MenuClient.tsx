@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useMemo, useState } from 'react'
-import { Search, ShoppingBag, Utensils, SlidersHorizontal, Leaf, IndianRupee } from 'lucide-react'
+import { Search, ShoppingBag, Utensils, SlidersHorizontal, Leaf, IndianRupee, Sparkles } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
 import { useToast } from '@/hooks/use-toast'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
