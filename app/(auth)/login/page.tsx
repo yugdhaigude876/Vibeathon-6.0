@@ -48,40 +48,30 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
 
-    const id = staffId.trim().toLowerCase()
-
-    // 1. Try real Supabase Authentication
+    // Enforce 100% Strict Supabase Password Verification
     const { data, error: signInError } = await signIn(staffId, staffPassword)
 
-    if (!signInError && data?.user) {
-      const { profile } = await getUserProfile(data.user.id)
-      const role = (profile?.role || (data.user.user_metadata?.role as string) || 'customer').toLowerCase()
-
-      if (role === 'manager' || role === 'admin') {
-        toast({ title: 'Welcome Manager!', description: 'Logged into Manager ERP Dashboard.' })
-        window.location.href = '/manager'
-        return
-      } else if (role === 'staff' || role === 'chef' || role === 'cashier' || role === 'waiter' || role === 'delivery') {
-        toast({ title: 'Welcome Staff!', description: 'Logged into Staff POS System.' })
-        window.location.href = '/staff/kitchen'
-        return
-      }
+    if (signInError || !data?.user) {
+      const errStr = signInError ? (typeof signInError === 'string' ? signInError : signInError.message || 'Invalid email or password') : 'Invalid credentials'
+      setError(errStr)
+      setLoading(false)
+      return
     }
 
-    // 2. Developer / Demo Mode Fallback (if account doesn't exist in Supabase yet or rate limited)
-    if (id.includes('manager') || id.startsWith('mng') || id.includes('admin')) {
-      toast({ title: 'Welcome Manager!', description: 'Accessing Manager ERP Dashboard (Demo Access)...' })
+    // Retrieve role strictly from Supabase Profiles database
+    const { profile } = await getUserProfile(data.user.id)
+    const role = (profile?.role || (data.user.user_metadata?.role as string) || 'customer').toLowerCase()
+
+    if (role === 'manager' || role === 'admin') {
+      toast({ title: 'Welcome Manager!', description: 'Logged into Manager ERP Dashboard.' })
       window.location.href = '/manager'
-      return
-    } else if (id.includes('staff') || id.includes('chef') || id.includes('kitchen') || id.startsWith('stf')) {
-      toast({ title: 'Welcome Staff!', description: 'Accessing Staff POS System (Demo Access)...' })
+    } else if (role === 'staff' || role === 'chef' || role === 'cashier' || role === 'waiter' || role === 'delivery') {
+      toast({ title: 'Welcome Staff!', description: 'Logged into Staff POS System.' })
       window.location.href = '/staff/kitchen'
-      return
+    } else {
+      setError('Unauthorized: Your account does not have Staff or Manager permissions.')
+      setLoading(false)
     }
-
-    const errStr = signInError ? (typeof signInError === 'string' ? signInError : signInError.message || 'Invalid credentials') : 'Invalid credentials'
-    setError(errStr)
-    setLoading(false)
   }
 
   async function handleCustomerSignIn(e: React.FormEvent) {
@@ -89,35 +79,25 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
 
-    const email = customerEmail.trim().toLowerCase()
-
-    // 1. Try real Supabase Authentication
+    // Enforce 100% Strict Supabase Password Verification
     const { data, error: signInError } = await signIn(customerEmail, customerPassword)
 
-    if (!signInError && data?.user) {
-      const { profile } = await getUserProfile(data.user.id)
-      const role = (profile?.role || (data.user.user_metadata?.role as string) || 'customer').toLowerCase()
-
-      if (role === 'manager' || role === 'admin') {
-        window.location.href = '/manager'
-      } else if (role === 'staff' || role === 'chef' || role === 'cashier' || role === 'waiter' || role === 'delivery') {
-        window.location.href = '/staff/kitchen'
-      } else {
-        window.location.href = '/menu'
-      }
+    if (signInError || !data?.user) {
+      const errStr = signInError ? (typeof signInError === 'string' ? signInError : signInError.message || 'Invalid email or password') : 'Invalid email or password'
+      setError(errStr)
+      setLoading(false)
       return
     }
 
-    // 2. Developer / Demo Mode Fallback for Customer Portal
-    if (email.includes('manager') || email.startsWith('mng')) {
+    const { profile } = await getUserProfile(data.user.id)
+    const role = (profile?.role || (data.user.user_metadata?.role as string) || 'customer').toLowerCase()
+
+    if (role === 'manager' || role === 'admin') {
       window.location.href = '/manager'
-      return
-    } else if (email.includes('staff') || email.includes('chef') || email.startsWith('stf')) {
+    } else if (role === 'staff' || role === 'chef' || role === 'cashier' || role === 'waiter' || role === 'delivery') {
       window.location.href = '/staff/kitchen'
-      return
     } else {
       window.location.href = '/menu'
-      return
     }
   }
 
