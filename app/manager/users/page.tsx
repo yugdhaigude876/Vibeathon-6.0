@@ -9,12 +9,10 @@ import { Button } from '@/components/ui/button'
 import { Users, ShieldCheck, UserPlus, Lock, CheckCircle2, XCircle } from 'lucide-react'
 
 export default function UserManagementPage() {
-  const { users, toggleUserStatus } = useManagerStore()
+  const { users, toggleUserStatus, customers, toggleBlacklistCustomer } = useManagerStore()
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 pb-16">
-      <ManagerHeader />
-
       <main className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>

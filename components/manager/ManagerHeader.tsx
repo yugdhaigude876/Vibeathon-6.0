@@ -2,7 +2,7 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import {
   BarChart3,
   TrendingUp,
@@ -17,9 +17,12 @@ import {
   ShieldCheck,
   Activity,
   FileText,
+  LogOut,
 } from 'lucide-react'
 import { useManagerStore } from '@/lib/managerStore'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { signOut } from '@/lib/auth'
 
 const MANAGER_NAV = [
   { label: 'Executive Dashboard', href: '/manager', icon: BarChart3 },
@@ -33,9 +36,15 @@ const MANAGER_NAV = [
 
 export function ManagerHeader() {
   const pathname = usePathname()
+  const router = useRouter()
   const { branches, selectedBranchId, setSelectedBranchId } = useManagerStore()
 
   const currentBranch = branches.find((b) => b.id === selectedBranchId) || branches[0]
+
+  const handleLogout = async () => {
+    await signOut()
+    router.push('/login')
+  }
 
   return (
     <header className="sticky top-0 z-40 border-b border-zinc-800 bg-zinc-950/90 backdrop-blur-md">
@@ -74,11 +83,20 @@ export function ManagerHeader() {
           </div>
         </div>
 
-        {/* Right Admin Status */}
+        {/* Right Admin Status & Logout */}
         <div className="flex items-center gap-3">
-          <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-bold px-3 py-1 flex items-center gap-1.5">
+          <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-bold px-3 py-1 flex items-center gap-1.5 hidden sm:flex">
             <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" /> System Operational
           </Badge>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleLogout}
+            className="border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 text-xs font-bold rounded-xl h-8 px-3"
+          >
+            <LogOut className="h-3.5 w-3.5 mr-1.5" />
+            Logout
+          </Button>
         </div>
       </div>
 
