@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import {
   ChefHat,
   Receipt,
@@ -17,11 +17,14 @@ import {
   Sparkles,
   X,
   User,
+  LogOut,
+  ChevronDown,
 } from 'lucide-react'
 import { useStaffStore } from '@/lib/staffStore'
 import { StaffRole, StaffNotification } from '@/lib/staffTypes'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { signOut } from '@/lib/auth'
 
 const ROLE_NAVIGATION: { role: StaffRole; label: string; href: string; icon: React.ElementType }[] = [
   { role: 'chef', label: 'Dashboard', href: '/staff/dashboard', icon: LayoutDashboard },
@@ -33,6 +36,7 @@ const ROLE_NAVIGATION: { role: StaffRole; label: string; href: string; icon: Rea
 
 export function StaffHeader() {
   const pathname = usePathname()
+  const router = useRouter()
   const {
     profile,
     toggleClockIn,
@@ -44,6 +48,7 @@ export function StaffHeader() {
   } = useStaffStore()
 
   const [showNotifications, setShowNotifications] = useState(false)
+  const [showProfileMenu, setShowProfileMenu] = useState(false)
 
   // Live Break Timer Tick Effect
   useEffect(() => {
@@ -53,6 +58,15 @@ export function StaffHeader() {
     }, 1000)
     return () => clearInterval(interval)
   }, [profile.breakStatus, incrementBreakSeconds])
+
+  const handleLogout = async () => {
+    try {
+      await signOut()
+    } catch (e) {
+      console.error(e)
+    }
+    window.location.href = '/login'
+  }
 
   const formatBreakTime = (totalSecs: number = 0) => {
     const mins = Math.floor(totalSecs / 60)
@@ -122,7 +136,10 @@ export function StaffHeader() {
             <div className="relative">
               <button
                 type="button"
-                onClick={() => setShowNotifications(!showNotifications)}
+                onClick={() => {
+                  setShowNotifications(!showNotifications)
+                  setShowProfileMenu(false)
+                }}
                 className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-zinc-300 hover:bg-white/10 hover:text-zinc-100 transition shadow-sm"
                 title="Notifications"
               >
@@ -209,22 +226,63 @@ export function StaffHeader() {
             </button>
           </div>
 
-          {/* Staff Profile Pill */}
-          <div className="flex items-center gap-2.5 rounded-2xl border border-white/10 bg-zinc-900/80 p-1.5 pl-3 shadow-sm">
-            <div className="text-right">
-              <p className="text-xs font-extrabold text-zinc-100 leading-none">{cleanName}</p>
-              <span className="text-[9px] font-black text-amber-400 uppercase tracking-wider">
-                {profile.role}
-              </span>
-            </div>
-            <div className="relative">
-              <img
-                src={profile.avatarUrl}
-                alt={profile.name}
-                className="h-8 w-8 rounded-xl border border-amber-500/40 object-cover"
-              />
-              <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-zinc-950" />
-            </div>
+          {/* Integrated Profile & Logout Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                setShowProfileMenu(!showProfileMenu)
+                setShowNotifications(false)
+              }}
+              className="flex items-center gap-2 rounded-2xl border border-white/10 bg-zinc-900/80 p-1.5 pl-3 hover:bg-zinc-900 hover:border-amber-500/30 transition shadow-sm group"
+            >
+              <div className="text-right hidden sm:block">
+                <p className="text-xs font-extrabold text-zinc-100 leading-none group-hover:text-amber-300 transition">{cleanName}</p>
+                <span className="text-[9px] font-black text-amber-400 uppercase tracking-wider">
+                  {profile.role}
+                </span>
+              </div>
+              <div className="relative">
+                <img
+                  src={profile.avatarUrl}
+                  alt={profile.name}
+                  className="h-8 w-8 rounded-xl border border-amber-500/40 object-cover"
+                />
+                <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-zinc-950" />
+              </div>
+              <ChevronDown className={`h-3.5 w-3.5 text-zinc-400 transition-transform duration-200 ${showProfileMenu ? 'rotate-180 text-amber-400' : ''}`} />
+            </button>
+
+            {/* Profile & Logout Popover */}
+            {showProfileMenu && (
+              <div className="absolute right-0 mt-3 w-64 rounded-2xl border border-white/10 bg-zinc-950/95 p-3.5 shadow-2xl backdrop-blur-2xl z-50 space-y-3">
+                <div className="flex items-center gap-3 border-b border-white/10 pb-3">
+                  <img
+                    src={profile.avatarUrl}
+                    alt={profile.name}
+                    className="h-10 w-10 rounded-xl border border-amber-500/40 object-cover"
+                  />
+                  <div>
+                    <p className="text-xs font-extrabold text-zinc-100">{cleanName}</p>
+                    <p className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">{profile.role}</p>
+                    <p className="text-[10px] text-zinc-400 truncate max-w-[140px] mt-0.5">{profile.branch}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <button
+                    onClick={handleLogout}
+                    className="flex w-full items-center justify-between rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-500/20 hover:text-red-300 transition"
+                  >
+                    <span className="flex items-center gap-2">
+                      <LogOut className="h-4 w-4" />
+                      Sign Out
+                    </span>
+                    <span className="text-[9px] font-mono text-red-400/60 uppercase">Logout</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
         </div>
