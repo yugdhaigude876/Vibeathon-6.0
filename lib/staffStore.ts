@@ -242,14 +242,7 @@ export const useStaffStore = create<StaffStoreState>((set) => ({
         }
         return { ...tbl, status }
       }),
-// Notifications
-  notifications: StaffNotification[]
-  markNotificationRead: (id: string) => void
-  clearAllNotifications: () => void
-
-  // Performance Stats
-  performance: StaffPerformanceStats
-}
+    })),
 
 const INITIAL_PROFILE: StaffProfile = {
   name: 'Chef Alex Rivera',
