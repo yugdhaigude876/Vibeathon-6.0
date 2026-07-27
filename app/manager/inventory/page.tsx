@@ -68,7 +68,7 @@ export default function ManagerInventoryPage() {
   const [newReorder, setNewReorder] = useState('')
   const [saving, setSaving] = useState(false)
 
-  // Merge real-time items with Luft menu defaults for complete inventory list
+  // Sync with full Customer Menu dataset (LUFT_MENU_ITEMS + real-time Supabase overrides)
   const inventoryItems: InventoryItem[] = useMemo(() => {
     if (realtimeItems && realtimeItems.length > 0) {
       return realtimeItems.map((i) => ({
@@ -76,7 +76,7 @@ export default function ManagerInventoryPage() {
         name: i.name,
         category: i.category || 'General',
         price: Number(i.price || 0),
-        stock_level: (i as any).stock_level ?? 18,
+        stock_level: (i as any).stock_level ?? 24,
         reorder_level: (i as any).reorder_level ?? 10,
         is_available: i.is_available ?? true,
       }))
@@ -87,7 +87,7 @@ export default function ManagerInventoryPage() {
       name: item.name,
       category: item.category,
       price: item.price,
-      stock_level: idx % 3 === 0 ? 5 : idx % 5 === 0 ? 0 : 25,
+      stock_level: idx % 7 === 0 ? 4 : idx % 11 === 0 ? 0 : 30,
       reorder_level: 10,
       is_available: item.is_available,
     }))
