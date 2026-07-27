@@ -37,6 +37,18 @@ export async function signInWithGoogle(): Promise<{
   data: OAuthResponse['data']
   error: AuthError | null
 }> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  if (!supabaseUrl || supabaseUrl.includes('placeholder.supabase.co')) {
+    return {
+      data: { provider: 'google', url: null },
+      error: {
+        name: 'AuthConfigurationError',
+        message: 'Supabase URL is not configured on Vercel. Please add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel Project Settings.',
+        status: 400,
+      } as unknown as AuthError,
+    }
+  }
+
   const supabase = createClient()
   const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/api/auth/callback` : undefined
   const { data, error } = await supabase.auth.signInWithOAuth({
@@ -45,6 +57,18 @@ export async function signInWithGoogle(): Promise<{
       redirectTo: redirectUrl,
     },
   })
+
+  if (data?.url && data.url.includes('placeholder.supabase.co')) {
+    return {
+      data: { provider: 'google', url: null },
+      error: {
+        name: 'AuthConfigurationError',
+        message: 'Supabase URL is set to a placeholder on Vercel. Please configure valid Supabase keys in Vercel Settings.',
+        status: 400,
+      } as unknown as AuthError,
+    }
+  }
+
   return { data, error }
 }
 
