@@ -48,39 +48,30 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
 
-    const id = staffId.trim().toLowerCase()
-
-    // Immediate Demo Login Check
-    if (id.includes('manager') || id.startsWith('mng')) {
-      toast({ title: 'Welcome Manager!', description: 'Accessing Manager ERP Dashboard...' })
-      window.location.href = '/manager'
-      return
-    } else if (id.includes('staff') || id.includes('chef') || id.startsWith('stf')) {
-      toast({ title: 'Welcome Staff!', description: 'Accessing Staff POS Terminal...' })
-      window.location.href = '/staff/kitchen'
-      return
-    }
-
-    // Standard Supabase auth fallback
+    // Strict Supabase Authentication
     const { data, error: signInError } = await signIn(staffId, staffPassword)
 
-    if (!signInError && data?.user) {
-      const { profile } = await getUserProfile(data.user.id)
-      const role = (profile?.role || (data.user.user_metadata?.role as string) || 'customer').toLowerCase()
-
-      if (role === 'manager' || role === 'admin') {
-        window.location.href = '/manager'
-      } else if (role === 'staff') {
-        window.location.href = '/staff/kitchen'
-      } else {
-        window.location.href = '/dashboard'
-      }
+    if (signInError || !data?.user) {
+      const errStr = signInError ? (typeof signInError === 'string' ? signInError : signInError.message || 'Invalid credentials') : 'Invalid credentials'
+      setError(errStr)
+      setLoading(false)
       return
     }
 
-    const errStr = signInError ? (typeof signInError === 'string' ? signInError : signInError.message || 'Invalid credentials') : 'Invalid credentials'
-    setError(errStr)
-    setLoading(false)
+    // Verify role strictly from Supabase Profiles database
+    const { profile } = await getUserProfile(data.user.id)
+    const role = (profile?.role || (data.user.user_metadata?.role as string) || 'customer').toLowerCase()
+
+    if (role === 'manager' || role === 'admin') {
+      toast({ title: 'Welcome Manager!', description: 'Logged into Manager ERP Dashboard.' })
+      window.location.href = '/manager'
+    } else if (role === 'staff' || role === 'chef' || role === 'cashier' || role === 'waiter' || role === 'delivery') {
+      toast({ title: 'Welcome Staff!', description: 'Logged into Staff POS System.' })
+      window.location.href = '/staff/kitchen'
+    } else {
+      setError('Unauthorized access: Your account does not have Staff or Manager permissions.')
+      setLoading(false)
+    }
   }
 
   async function handleCustomerSignIn(e: React.FormEvent) {
@@ -88,36 +79,22 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
 
-    const email = customerEmail.trim().toLowerCase()
-    if (email.includes('manager') || email.startsWith('mng')) {
-      toast({ title: 'Welcome Manager!', description: 'Accessing Manager ERP Dashboard...' })
-      window.location.href = '/manager'
-      return
-    } else if (email.includes('staff') || email.includes('chef') || email.startsWith('stf')) {
-      toast({ title: 'Welcome Staff!', description: 'Accessing Staff POS Terminal...' })
-      window.location.href = '/staff/kitchen'
-      return
-    }
-
+    // Strict Supabase Authentication
     const { data, error: signInError } = await signIn(customerEmail, customerPassword)
 
-    if (signInError) {
-      setError(signInError.message)
+    if (signInError || !data?.user) {
+      setError(signInError ? (typeof signInError === 'string' ? signInError : signInError.message) : 'Invalid credentials')
       setLoading(false)
       return
     }
 
-    if (data?.user) {
-      const { profile } = await getUserProfile(data.user.id)
-      const role = (profile?.role || (data.user.user_metadata?.role as string) || 'customer').toLowerCase()
+    const { profile } = await getUserProfile(data.user.id)
+    const role = (profile?.role || (data.user.user_metadata?.role as string) || 'customer').toLowerCase()
 
-      if (role === 'manager' || role === 'admin') {
-        window.location.href = '/manager'
-      } else if (role === 'staff' || role === 'chef' || role === 'cashier' || role === 'waiter' || role === 'delivery') {
-        window.location.href = '/staff/kitchen'
-      } else {
-        window.location.href = '/menu'
-      }
+    if (role === 'manager' || role === 'admin') {
+      window.location.href = '/manager'
+    } else if (role === 'staff' || role === 'chef' || role === 'cashier' || role === 'waiter' || role === 'delivery') {
+      window.location.href = '/staff/kitchen'
     } else {
       window.location.href = '/menu'
     }
