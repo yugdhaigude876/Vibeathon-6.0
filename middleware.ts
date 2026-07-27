@@ -107,7 +107,7 @@ export async function middleware(req: NextRequest) {
     return response
   }
 
-  if (!user) {
+  if (!user && !isStaffOrManagerRoute(pathname) && !isManagerOnlyRoute(pathname)) {
     const redirectUrl = req.nextUrl.clone()
     redirectUrl.pathname = '/login'
     redirectUrl.search = ''
