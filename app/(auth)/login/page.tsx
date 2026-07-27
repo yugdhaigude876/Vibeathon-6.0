@@ -66,7 +66,20 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
 
-    // Attempt standard Supabase auth first
+    const id = staffId.trim().toLowerCase()
+
+    // Immediate Demo Login Check
+    if (id.includes('manager') || id.startsWith('mng')) {
+      toast({ title: 'Welcome Manager!', description: 'Accessing Manager ERP Dashboard...' })
+      window.location.href = '/manager'
+      return
+    } else if (id.includes('staff') || id.includes('chef') || id.startsWith('stf')) {
+      toast({ title: 'Welcome Staff!', description: 'Accessing Staff POS Terminal...' })
+      window.location.href = '/staff/kitchen'
+      return
+    }
+
+    // Standard Supabase auth fallback
     const { data, error: signInError } = await signIn(staffId, staffPassword)
 
     if (!signInError && data?.user) {
@@ -74,24 +87,12 @@ export default function LoginPage() {
       const role = (profile?.role || (data.user.user_metadata?.role as string) || 'customer').toLowerCase()
 
       if (role === 'manager' || role === 'admin') {
-        router.push('/manager')
+        window.location.href = '/manager'
       } else if (role === 'staff') {
-        router.push('/staff/kitchen')
+        window.location.href = '/staff/kitchen'
       } else {
-        router.push('/dashboard')
+        window.location.href = '/dashboard'
       }
-      return
-    }
-
-    // Direct Demo Login Fallback
-    const id = staffId.trim().toLowerCase()
-    if (id.includes('manager') || id.startsWith('mng')) {
-      toast({ title: 'Welcome Manager!', description: 'Logged into Manager ERP Dashboard.' })
-      router.push('/manager')
-      return
-    } else if (id.includes('staff') || id.includes('chef') || id.startsWith('stf')) {
-      toast({ title: 'Welcome Staff!', description: 'Logged into Staff POS System.' })
-      router.push('/staff/kitchen')
       return
     }
 
