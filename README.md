@@ -317,30 +317,48 @@ PLATR/
 
 ---
 
-## 🧪 Demo Accounts
+---
 
-| Portal | Role | Email | Password | Landing |
-|---|---|---|---|---|
-| **Manager** | `manager` | `manager@platr.com` | `ManagerPass123!` | `/manager` |
-| **Staff / Kitchen** | `staff` | `staff@platr.com` | `StaffPass123!` | `/staff/kitchen` |
-| **Customer** | `customer` | Google OAuth or email sign-up | Self-registered | `/menu` |
+## ⚡ Vercel Deployment & Production Setup
 
-To assign roles to existing accounts:
-```sql
-UPDATE profiles SET role = 'manager' WHERE email = 'manager@platr.com';
-UPDATE profiles SET role = 'staff'   WHERE email = 'staff@platr.com';
-```
+This project is optimized for deployment on [Vercel](https://vercel.com).
+
+### Live Production Link
+👉 **[https://vibeathon-6-0-orcin.vercel.app](https://vibeathon-6-0-orcin.vercel.app)**
+
+### 🚀 Deploying to Vercel in 3 Steps:
+
+1. **Import Repository to Vercel:**
+   ```bash
+   git push origin main
+   ```
+   Import `yugdhaigude876/Vibeathon-6.0` into your Vercel Dashboard.
+
+2. **Configure Environment Variables in Vercel:**
+   Add the following variables in **Project Settings → Environment Variables**:
+
+   | Variable Key | Description | Example Value |
+   |---|---|---|
+   | `NEXT_PUBLIC_SUPABASE_URL` | Supabase Project API URL | `https://hfjnrrojhqkbhlsfchet.supabase.co` |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase Anonymous Key | `eyJhbGciOiJIUzI1NiIsInR5cCI6...` |
+   | `SUPABASE_SERVICE_ROLE_KEY` | Supabase Service Role Key (Server-side) | `eyJhbGciOiJIUzI1NiIsInR5cCI6...` |
+   | `NEXT_PUBLIC_SITE_URL` | Application Public Origin | `https://vibeathon-6-0-orcin.vercel.app` |
+
+3. **Build & Output Settings:**
+   - **Framework Preset:** `Next.js`
+   - **Build Command:** `npm run build`
+   - **Install Command:** `npm install`
+   - **Node.js Version:** `18.x` or `20.x`
 
 ---
 
-## 🔧 Scripts
+## 🧪 Demo Credentials Summary
 
-| Command | Description |
-|---|---|
-| `npm run dev` | Start local dev server → `localhost:3000` |
-| `npm run build` | Production build with type checking |
-| `npm start` | Serve the production build |
-| `npm run lint` | ESLint check |
+| Portal | Role | Recommended Login Email | Password | Direct Path |
+|---|---|---|---|---|
+| **Executive Manager (BETA)** | `manager` | `manager@platr.com` / `my.manager@platr.com` | `my.manager@platr.com` | `/manager` |
+| **Kitchen KDS & Waiter** | `staff` | `staff@platr.com` / `my.staff@platr.com` | `my.staff@platr.com` | `/staff/kitchen` & `/staff/waiter` |
+| **Guest Customer** | `customer` | Guest Checkout / Direct | N/A | `/menu` & `/reservations` |
 
 ---
 
@@ -349,36 +367,17 @@ UPDATE profiles SET role = 'staff'   WHERE email = 'staff@platr.com';
 | Layer | Technology |
 |---|---|
 | **Framework** | Next.js 15.1 (App Router) |
+| **Hosting** | Vercel Serverless Edge Platform |
 | **Language** | TypeScript 5 |
-| **Auth & Database** | Supabase (Auth + PostgreSQL + Realtime) |
-| **ORM** | Supabase JS Client (`@supabase/ssr`) |
-| **Styling** | Tailwind CSS 3 |
-| **UI Primitives** | Radix UI + Lucide Icons |
-| **State** | React Context (cart), React hooks (realtime) |
-| **Security** | Edge Middleware + API Guards + RLS + Rate Limiting |
+| **Auth & Database** | Supabase (Auth + PostgreSQL + Realtime WebSockets) |
+| **State & Sync** | Zustand + BroadcastChannel + LocalStorage Event Sync |
+| **Styling & Icons** | Tailwind CSS + Lucide Icons + Glassmorphism UI |
 
 ---
-
-## 🗺️ Roadmap
-
-- [ ] **AI Menu Assistant** — natural-language item recommendations via `/api/ai/assistant`
-- [ ] **Push Notifications** — browser push for order status updates
-- [ ] **Multi-restaurant Support** — tenant isolation per `restaurant_id`
-- [ ] **Analytics Dashboard** — revenue charts, peak hours, popular items
-- [ ] **QR Code Ordering** — scan table QR → auto-fill table number in cart
-- [ ] **Loyalty Points System** — reward repeat customers
-- [ ] **Mobile App** — React Native companion for staff
-- [ ] **Redis Rate Limiting** — replace in-memory limiter for multi-instance deployments
-- [ ] **Webhook Support** — notify POS systems on order events
-
----
-
-## 📄 License
-
-MIT — see [LICENSE](./LICENSE).
 
 <br />
 
 <div align="center">
-  <sub>Built with ❤️ for <strong>Vibeathon 6.0</strong> · Powered by Next.js + Supabase</sub>
+  <sub>Built with ❤️ for <strong>Vibeathon 6.0</strong> · Powered by Next.js + Supabase + Vercel</sub>
 </div>
+
