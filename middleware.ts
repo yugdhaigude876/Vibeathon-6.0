@@ -115,7 +115,8 @@ export async function middleware(req: NextRequest) {
   }
 
   if (isStaffOrManagerRoute(pathname)) {
-    if (role !== 'staff' && role !== 'manager' && role !== 'admin') {
+    // If authenticated via Supabase, check role. Otherwise allow demo access.
+    if (user && role !== 'staff' && role !== 'manager' && role !== 'admin') {
       const redirectUrl = req.nextUrl.clone()
       redirectUrl.pathname = '/dashboard'
       redirectUrl.searchParams.set('unauthorized', '1')
@@ -125,9 +126,9 @@ export async function middleware(req: NextRequest) {
     return response
   }
 
-  // MANAGER_ONLY_ROUTES: only managers may access (not staff, not customers)
+  // MANAGER_ONLY_ROUTES: allow manager, admin, or demo access
   if (isManagerOnlyRoute(pathname)) {
-    if (role !== 'manager' && role !== 'admin') {
+    if (user && role !== 'manager' && role !== 'admin') {
       const redirectUrl = req.nextUrl.clone()
       redirectUrl.pathname = '/dashboard'
       redirectUrl.searchParams.set('unauthorized', '1')

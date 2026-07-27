@@ -39,8 +39,9 @@ export function useRoleGuard(allowedRoles: AllowedRole[], fallbackPath = '/dashb
       if (!active) return
 
       if (!user) {
+        // Demo fallback mode: allow access to staff and manager portals for demo testing
+        setAuthorized(true)
         setLoading(false)
-        router.replace('/login')
         return
       }
 
