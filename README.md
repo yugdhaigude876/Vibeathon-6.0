@@ -1,10 +1,10 @@
 <div align="center">
 
-# 🍽️ PLATR
+# 🍽️ PLATR (LUFT POS & Enterprise ERP)
 
-### The Modern Restaurant Operating System
+### The Next-Gen Real-Time Restaurant Operating System
 
-**Real-time orders · Smart reservations · Kitchen display system · Role-based access · Enterprise security**
+**Real-Time Orders · Floor Telemetry · Kitchen KDS Board · Interactive Table Service · Enterprise Manager Command Center**
 
 <br />
 
@@ -12,52 +12,45 @@
 [![Supabase](https://img.shields.io/badge/Supabase-Realtime-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](./LICENSE)
+[![Vercel Deployment](https://img.shields.io/badge/Vercel-Live_Demo-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vibeathon-6-0-orcin.vercel.app)
 
 <br />
 
-> **Built for Vibeathon 6.0** — a full-stack restaurant platform that connects customers, kitchen staff, and managers in real time.
+> **Built for Vibeathon 6.0** — A complete multi-role platform linking customers, floor servers, kitchen chefs, delivery riders, and enterprise managers in real time.
 
 </div>
 
 ---
 
-## 🌟 What is PLATR?
+## 🚀 Live Demo & Demo Accounts
 
-PLATR is a **full-stack restaurant operating system** built for the modern hospitality industry. It replaces paper menus, verbal orders, and disconnected spreadsheets with a unified digital platform — live, reactive, and role-aware.
+**Vercel Production Deployment:** [https://vibeathon-6-0-orcin.vercel.app](https://vibeathon-6-0-orcin.vercel.app)
 
-Every actor in the restaurant — the **customer** browsing the menu, the **chef** reading the Kitchen Display System, and the **manager** watching live revenue metrics — operates on the same real-time data layer powered by Supabase.
+### Demo Credentials:
+| Portal Role | Email | Password | Access URL |
+|---|---|---|---|
+| **Executive Manager (BETA)** | `manager@platr.com` / `my.manager@platr.com` | `my.manager@platr.com` | `/manager` |
+| **Kitchen & Waiter Staff** | `staff@platr.com` / `my.staff@platr.com` | `my.staff@platr.com` | `/staff/kitchen` & `/staff/waiter` |
+| **Guest Customer** | Guest Checkout / Direct Login | N/A | `/menu` & `/reservations` |
 
 ---
 
-## ✨ Feature Overview
+## 🌟 Key Platform Modules
 
-### 🧑‍💼 For Customers
-| Feature | Details |
-|---|---|
-| **Smart Menu** | Browse items by category, see live availability status |
-| **Cart & Checkout** | Add items to cart, review order, place with one click |
-| **Order Tracking** | View your active and past orders with status updates |
-| **Table Reservations** | Book tables with date, time, and party-size validation |
-| **Persistent Cart** | Cart state saved to `localStorage` across sessions |
+### 🧑‍💼 Customer Experience
+- **Interactive Menu & Cart:** Filter dishes, customize notes, and place orders with instant local and WebSocket persistence.
+- **Table Reservations:** Reserve dining tables with real-time validation and instant sync to the Manager Dashboard.
+- **Order Tracking:** Track order status progression (`pending → preparing → ready → completed / delivered`).
 
-### 🧑‍🍳 For Kitchen Staff
-| Feature | Details |
-|---|---|
-| **Kitchen Display System (KDS)** | Two-column live board — "In Progress" & "Completed / Ready" |
-| **Real-Time Order Feed** | New orders appear instantly via Supabase Realtime WebSockets |
-| **New Order Toasts** | 🔔 Toast notification fires automatically on each new order |
-| **Status Progression** | Advance orders from `pending → preparing → ready → completed` |
-| **Menu Availability Toggle** | Mark items 86'd or back in stock without leaving the KDS |
+### 🧑‍🍳 Kitchen & Staff Operations
+- **Kitchen KDS Board (`/staff/kitchen`):** Dual-view order workflow with status progression, dish cancellation, and real-time audio toast alerts.
+- **Floor & Waiter Management (`/staff/waiter`):** Live table grid (`T-01` to `T-06`), interactive quick requests (`+ Water`, `+ Extra Sauce`, `Request Bill`), and individual request resolution ("Mark Done").
+- **Delivery Dispatch (`/staff/delivery`):** Assign riders and track delivery order fulfillment.
 
-### 📊 For Managers
-| Feature | Details |
-|---|---|
-| **Live Dashboard** | Revenue, order count, and status metrics update in real time |
-| **Order Management** | Full order history with customer details and item breakdown |
-| **Inventory Control** | Toggle menu item availability from the manager panel |
-| **Table Management** | Monitor table occupancy and reservations |
-| **Staff Oversight** | View all active staff sessions and order activity |
+### 📊 Executive Manager Command Center (`/manager` — BETA v1.0)
+- **Live Command Center:** Real-time revenue metrics, SLA fulfillment rates, and top-selling dishes.
+- **Live Orders Directory:** Bi-directional sync across Supabase Realtime, Zustand Store, and BroadcastChannels for manual status overrides.
+- **Table Reservations Manager:** Real-time visibility into all upcoming guest table bookings.
 
 ### 🔐 Security & Access Control
 | Layer | Implementation |

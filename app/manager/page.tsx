@@ -355,9 +355,12 @@ export default function ManagerPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-800 pb-4">
         <div>
-          <h1 className="text-2xl font-black text-zinc-50 flex items-center gap-2">
+          <h1 className="text-2xl font-black text-zinc-50 flex items-center gap-2 flex-wrap">
             <BarChart className="h-7 w-7 text-amber-500" />
-            Manager Command Center & Operations
+            Manager Command Center
+            <Badge className="bg-amber-500/20 text-amber-400 border border-amber-500/40 text-[11px] font-mono font-black px-2.5 py-0.5 rounded-full animate-pulse shadow-[0_0_12px_rgba(245,158,11,0.3)]">
+              BETA v1.0
+            </Badge>
           </h1>
           <p className="text-xs text-zinc-400 mt-1">
             Real-time revenue metrics, order management, kitchen status, and table occupancy.
