@@ -2,11 +2,12 @@
 
 import React, { useState } from 'react'
 import { StaffHeader } from '@/components/staff/StaffHeader'
-import { useStaffStore } from '@/lib/staffStore'
+import { useStaffStore, resetAllSystemData } from '@/lib/staffStore'
 import { WaiterTable } from '@/lib/staffTypes'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { useToast } from '@/hooks/use-toast'
 import {
   Users,
   Utensils,
@@ -18,27 +19,62 @@ import {
   XCircle,
   Clock,
   Sparkles,
+  RotateCcw,
 } from 'lucide-react'
 
 export default function WaiterPage() {
-  const { tables, requests, updateTableStatus, addCustomerRequest, clearTableRequests } = useStaffStore()
-  const [selectedTable, setSelectedTable] = useState<WaiterTable | null>(tables[0])
+  const { toast } = useToast()
+  const { tables, requests, updateTableStatus, addCustomerRequest, clearTableRequests, assignWaiterToTable } = useStaffStore()
+  const [selectedTableId, setSelectedTableId] = useState<string>(tables[0]?.id || 't1')
+
+  const selectedTable = tables.find((t) => t.id === selectedTableId) || tables[0]
+
+  const handleResetSystem = () => {
+    try {
+      localStorage.removeItem('platr_user_orders')
+      localStorage.removeItem('platr_user_reservations')
+      localStorage.removeItem('luft_last_new_order')
+      localStorage.removeItem('luft_last_status_update')
+    } catch (e) {
+      console.warn(e)
+    }
+    resetAllSystemData()
+    toast({
+      title: 'System Orders Reset 🔄',
+      description: 'All system orders, testing stats, and tables have been reset to zero.',
+    })
+  }
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 pb-16">
       <StaffHeader />
 
       <main className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-black text-zinc-100 uppercase tracking-wide">Floor & Table Management</h1>
+            <h1 className="text-2xl font-black text-zinc-100 uppercase tracking-wide flex items-center gap-3">
+              Floor & Table Management
+            </h1>
             <p className="text-xs text-zinc-400 font-semibold mt-1">
               Manage seating, table transfers, bill requests, and guest calls in real time.
             </p>
           </div>
-          <Badge className="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs px-3 py-1 font-bold">
-            Live Floor View
-          </Badge>
+
+          <div className="flex items-center gap-3">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleResetSystem}
+              className="border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 hover:text-amber-200 text-xs font-bold rounded-xl h-9"
+            >
+              <RotateCcw className="mr-1.5 h-3.5 w-3.5 text-amber-400" />
+              Reset System Testing Stats
+            </Button>
+
+            <Badge className="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs px-3 py-1 font-bold">
+              Live Floor View
+            </Badge>
+          </div>
         </div>
 
         {/* Table Grid View */}
@@ -46,10 +82,10 @@ export default function WaiterPage() {
           {tables.map((tbl: WaiterTable) => (
             <button
               key={tbl.id}
-              onClick={() => setSelectedTable(tbl)}
+              onClick={() => setSelectedTableId(tbl.id)}
               className={`rounded-2xl border p-4 text-left transition-all ${
                 selectedTable?.id === tbl.id
-                  ? 'border-amber-500 bg-amber-950/20 shadow-lg shadow-amber-500/10'
+                  ? 'border-amber-500 bg-amber-950/20 shadow-lg shadow-amber-500/10 ring-2 ring-amber-500/40'
                   : 'border-zinc-800 bg-zinc-900/60 hover:border-zinc-700'
               }`}
             >
@@ -58,12 +94,12 @@ export default function WaiterPage() {
                 <Badge
                   className={`text-[9px] uppercase font-bold px-2 py-0.5 ${
                     tbl.status === 'occupied'
-                      ? 'bg-amber-500/20 text-amber-400'
+                      ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
                       : tbl.status === 'billing'
-                      ? 'bg-purple-500/20 text-purple-400'
+                      ? 'bg-purple-500/20 text-purple-400 border-purple-500/30'
                       : tbl.status === 'reserved'
-                      ? 'bg-blue-500/20 text-blue-400'
-                      : 'bg-emerald-500/20 text-emerald-400'
+                      ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                      : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
                   }`}
                 >
                   {tbl.status}
@@ -78,8 +114,8 @@ export default function WaiterPage() {
               </div>
 
               {tbl.customerRequests.length > 0 && (
-                <div className="mt-2 text-[10px] font-bold text-red-400 bg-red-950/30 px-2 py-1 rounded-md border border-red-500/30 flex items-center gap-1">
-                  <BellRing className="h-3 w-3" /> {tbl.customerRequests.length} Requests
+                <div className="mt-2 text-[10px] font-bold text-red-400 bg-red-950/40 px-2 py-1 rounded-md border border-red-500/40 flex items-center gap-1">
+                  <BellRing className="h-3 w-3 animate-pulse text-red-400" /> {tbl.customerRequests.length} Requests
                 </div>
               )}
             </button>
@@ -89,20 +125,24 @@ export default function WaiterPage() {
         {/* Selected Table Workspace */}
         {selectedTable && (
           <Card className="border border-zinc-800 bg-zinc-900/80 rounded-3xl p-6">
-            <CardHeader className="p-0 pb-4 border-b border-zinc-800 flex flex-row items-center justify-between">
+            <CardHeader className="p-0 pb-4 border-b border-zinc-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <CardTitle className="text-xl font-black text-amber-400 flex items-center gap-3">
                   Table Workspace — {selectedTable.tableNumber}
                 </CardTitle>
                 <p className="text-xs text-zinc-400 mt-1 font-semibold">
-                  Assigned Waiter: <span className="text-zinc-200">{selectedTable.assignedWaiter || 'Unassigned'}</span> | Occupancy: {selectedTable.occupancy}/{selectedTable.capacity}
+                  Assigned Waiter: <span className="text-zinc-200">{selectedTable.assignedWaiter || 'Rahul Verma'}</span> | Status:{' '}
+                  <span className="uppercase text-amber-300 font-bold">{selectedTable.status}</span>
                 </p>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button
                   size="sm"
-                  onClick={() => updateTableStatus(selectedTable.id, 'billing')}
+                  onClick={() => {
+                    updateTableStatus(selectedTable.id, 'billing')
+                    toast({ title: `Table ${selectedTable.tableNumber} Bill Requested`, description: 'Status updated to billing.' })
+                  }}
                   className="bg-purple-600 hover:bg-purple-700 text-zinc-100 text-xs font-bold rounded-xl"
                 >
                   <Receipt className="mr-1.5 h-3.5 w-3.5" /> Request Bill
@@ -110,10 +150,13 @@ export default function WaiterPage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => updateTableStatus(selectedTable.id, 'available')}
-                  className="border-zinc-800 text-zinc-300 text-xs font-bold rounded-xl"
+                  onClick={() => {
+                    updateTableStatus(selectedTable.id, 'available')
+                    toast({ title: `Table ${selectedTable.tableNumber} Cleared`, description: 'Table is now available for new guests.' })
+                  }}
+                  className="border-zinc-800 text-zinc-300 hover:bg-zinc-800 text-xs font-bold rounded-xl"
                 >
-                  <XCircle className="mr-1.5 h-3.5 w-3.5" /> Clear & Close Table
+                  <XCircle className="mr-1.5 h-3.5 w-3.5 text-zinc-400" /> Clear & Close Table
                 </Button>
               </div>
             </CardHeader>
@@ -128,8 +171,11 @@ export default function WaiterPage() {
                       key={reqType}
                       variant="outline"
                       size="sm"
-                      onClick={() => addCustomerRequest({ tableNumber: selectedTable.tableNumber, type: reqType as any, priority: 'normal' })}
-                      className="justify-start border-zinc-800 bg-zinc-950 text-zinc-300 hover:bg-zinc-800 hover:text-amber-400 text-xs font-semibold rounded-xl h-10"
+                      onClick={() => {
+                        addCustomerRequest({ tableNumber: selectedTable.tableNumber, type: reqType as any, priority: 'normal' })
+                        toast({ title: `Request Added to ${selectedTable.tableNumber}`, description: `Added: ${reqType}` })
+                      }}
+                      className="justify-start border-zinc-800 bg-zinc-950 text-zinc-300 hover:bg-zinc-800 hover:text-amber-400 text-xs font-semibold rounded-xl h-10 transition-colors"
                     >
                       <Plus className="mr-1.5 h-3.5 w-3.5 text-amber-500" /> {reqType}
                     </Button>
@@ -151,7 +197,10 @@ export default function WaiterPage() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => clearTableRequests(selectedTable.id)}
+                      onClick={() => {
+                        clearTableRequests(selectedTable.id)
+                        toast({ title: `Requests Cleared`, description: `Cleared active requests for ${selectedTable.tableNumber}.` })
+                      }}
                       className="text-[10px] text-zinc-400 hover:text-zinc-100"
                     >
                       Clear All
@@ -166,7 +215,9 @@ export default function WaiterPage() {
                     {selectedTable.customerRequests.map((req, idx) => (
                       <div key={idx} className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-950 p-3 text-xs">
                         <span className="font-bold text-amber-400">{req}</span>
-                        <Badge className="bg-emerald-500/20 text-emerald-400 text-[10px]">In Progress</Badge>
+                        <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px]">
+                          Active Request
+                        </Badge>
                       </div>
                     ))}
                   </div>
@@ -179,3 +230,4 @@ export default function WaiterPage() {
     </div>
   )
 }
+
