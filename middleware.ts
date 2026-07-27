@@ -76,15 +76,7 @@ export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname
   const role = await getUserRole(supabase, user)
 
-  // 1. If logged in and hitting /login or /signup, redirect to default portal
-  if (user && isPublicRoute(pathname) && (pathname === '/login' || pathname === '/signup')) {
-    const redirectUrl = req.nextUrl.clone()
-    redirectUrl.pathname = getRoleRedirectPath(role)
-    redirectUrl.search = ''
-    return NextResponse.redirect(redirectUrl)
-  }
-
-  // Allow public routes
+  // Allow public routes without forced redirection
   if (isPublicRoute(pathname)) {
     return response
   }
