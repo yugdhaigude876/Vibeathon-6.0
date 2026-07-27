@@ -25,8 +25,6 @@ export default function LiveMonitoringPage() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 pb-16">
-      <ManagerHeader />
-
       <main className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
