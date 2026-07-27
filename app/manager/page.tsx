@@ -86,6 +86,21 @@ export default function ManagerPage() {
   const [realtimeOrders, ordersLoading] = useRealtimeOrders()
   const [realtimeReservations, resLoading] = useRealtimeReservations()
   const { orders: staffOrders } = useStaffStore()
+  const [syncTrigger, setSyncTrigger] = useState(0)
+
+  // Force re-render when local storage updates across tabs
+  useEffect(() => {
+    const handleSync = () => setSyncTrigger((prev) => prev + 1)
+    window.addEventListener('storage', handleSync)
+    window.addEventListener('luft_order_status_update', handleSync)
+    const interval = setInterval(handleSync, 2000)
+
+    return () => {
+      window.removeEventListener('storage', handleSync)
+      window.removeEventListener('luft_order_status_update', handleSync)
+      clearInterval(interval)
+    }
+  }, [])
 
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [orderFilter, setOrderFilter] = useState('all')
@@ -95,24 +110,23 @@ export default function ManagerPage() {
   const allMasterOrders = useMemo(() => {
     const merged: Order[] = [...realtimeOrders]
 
+    // 1. Merge Staff Store Orders
     staffOrders.forEach((sOrd) => {
-      const targetDisplay = (sOrd.displayId || '').toLowerCase()
-      const targetId = (sOrd.id || '').toLowerCase()
+      const targetDisplay = (sOrd.displayId || sOrd.id || '').toLowerCase()
 
       const existingIdx = merged.findIndex(
         (m) =>
-          m.id.toLowerCase() === targetId ||
-          (m as any).displayId?.toLowerCase() === targetDisplay ||
-          (m as any).displayId?.toLowerCase() === targetId
+          m.id.toLowerCase() === targetDisplay ||
+          (m as any).displayId?.toLowerCase() === targetDisplay
       )
 
       const formattedOrder: Order = {
         id: sOrd.displayId || sOrd.id,
-        customer_id: sOrd.customerName || 'Dine-in Customer',
+        customer_id: sOrd.customerName || 'Dine-in Guest',
         total_amount: sOrd.totalAmount,
         notes: sOrd.specialInstructions || null,
         status: sOrd.status,
-        created_at: sOrd.createdAt,
+        created_at: sOrd.createdAt || new Date().toISOString(),
         order_items: (sOrd.items || []).map((i) => ({
           id: i.id,
           menu_item_id: i.id,
@@ -129,8 +143,50 @@ export default function ManagerPage() {
       }
     })
 
+    // 2. Merge Local Storage Orders (Guest / Customer checkout)
+    if (typeof window !== 'undefined') {
+      try {
+        const localOrdersRaw = localStorage.getItem('platr_user_orders')
+        if (localOrdersRaw) {
+          const parsed = JSON.parse(localOrdersRaw)
+          parsed.forEach((lOrd: any) => {
+            const targetDisplay = (lOrd.displayId || lOrd.id || '').toLowerCase()
+            const existingIdx = merged.findIndex(
+              (m) =>
+                m.id.toLowerCase() === targetDisplay ||
+                (m as any).displayId?.toLowerCase() === targetDisplay
+            )
+
+            const formattedOrder: Order = {
+              id: lOrd.displayId || lOrd.id,
+              customer_id: lOrd.customerName || lOrd.guest_name || 'Customer',
+              total_amount: lOrd.totalAmount || lOrd.total_amount || 0,
+              notes: lOrd.specialInstructions || lOrd.notes || null,
+              status: lOrd.status || 'pending',
+              created_at: lOrd.createdAt || lOrd.created_at || new Date().toISOString(),
+              order_items: (lOrd.items || []).map((i: any) => ({
+                id: i.id || `item_${Math.random()}`,
+                menu_item_id: i.id,
+                quantity: i.quantity || 1,
+                unit_price: i.price || 0,
+                menu_items: { name: i.name || 'Order Item', category: 'Main' },
+              })),
+            } as any
+
+            if (existingIdx >= 0) {
+              merged[existingIdx] = { ...merged[existingIdx], status: lOrd.status || merged[existingIdx].status }
+            } else {
+              merged.unshift(formattedOrder)
+            }
+          })
+        }
+      } catch (e) {
+        console.warn('LocalStorage orders parse warning:', e)
+      }
+    }
+
     return merged
-  }, [realtimeOrders, staffOrders])
+  }, [realtimeOrders, staffOrders, syncTrigger])
 
   // Synchronized Master Reservations List (Supabase + Local Storage)
   const allMasterReservations = useMemo(() => {
@@ -148,12 +204,13 @@ export default function ManagerPage() {
           })
         }
       } catch (e) {
-        console.warn(e)
+        console.warn('LocalStorage reservations parse warning:', e)
       }
     }
 
     return merged
-  }, [realtimeReservations])
+  }, [realtimeReservations, syncTrigger])
+
 
   // Calculate Today's KPIs
   const { revenueToday, todaysOrders, completedOrdersCount, avgOrderValue } = useMemo(() => {
