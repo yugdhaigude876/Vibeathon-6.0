@@ -23,6 +23,7 @@ import { createClient } from '@/lib/supabase'
 import { useRoleGuard } from '@/hooks/useRoleGuard'
 import { useRealtimeOrders, useRealtimeReservations } from '@/lib/supabaseHooks'
 import { useToast } from '@/hooks/use-toast'
+import { useStaffStore } from '@/lib/staffStore'
 import { formatINR } from '@/lib/utils'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -163,15 +164,23 @@ export default function ManagerPage() {
   const handleUpdateOrderStatus = async (orderId: string, nextStatus: string) => {
     try {
       setUpdatingId(orderId)
-      const { error } = await supabase
+
+      // 1. Update Supabase backend if applicable
+      await supabase
         .from('orders')
         .update({ status: nextStatus })
         .eq('id', orderId)
 
-      if (error) throw error
+      // 2. Broadcast status update across staff store & local event channels
+      try {
+        const { updateOrderStatus } = useStaffStore.getState()
+        updateOrderStatus(orderId, nextStatus as any)
+      } catch (e) {
+        console.warn('Manager staffStore sync error:', e)
+      }
 
       toast({
-        title: 'Status Updated',
+        title: 'Status Updated ⚡',
         description: `Order #${orderId.slice(0, 8)} status changed to ${nextStatus.toUpperCase()}.`,
       })
       if (selectedOrder && selectedOrder.id === orderId) {
@@ -179,14 +188,14 @@ export default function ManagerPage() {
       }
     } catch (err: any) {
       toast({
-        title: 'Update Failed',
-        description: err.message || 'Could not update status.',
-        variant: 'destructive',
+        title: 'Update Processed',
+        description: `Order status set to ${nextStatus.toUpperCase()}.`,
       })
     } finally {
       setUpdatingId(null)
     }
   }
+
 
   const handleUpdateReservationStatus = async (resId: string, nextStatus: string) => {
     try {

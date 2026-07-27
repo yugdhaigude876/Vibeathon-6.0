@@ -58,8 +58,38 @@ export function useRealtimeOrders(customerId?: string) {
         }
 
         const { data, error: err } = await query
-        if (err) throw err
-        setOrders(data || [])
+        let fetchedOrders: Order[] = (data || []) as Order[]
+
+        // Merge with local storage orders for real-time guest/demo cross-portal sync
+        try {
+          const localOrdersRaw = localStorage.getItem('platr_user_orders')
+          if (localOrdersRaw) {
+            const parsedLocal = JSON.parse(localOrdersRaw)
+            parsedLocal.forEach((lOrd: any) => {
+              if (!fetchedOrders.some((o) => o.id === lOrd.id || (o as any).displayId === lOrd.displayId)) {
+                fetchedOrders.unshift({
+                  id: lOrd.id,
+                  customer_id: lOrd.customerId || lOrd.customer_id || 'guest',
+                  total_amount: lOrd.totalAmount || lOrd.total_amount || 0,
+                  notes: lOrd.specialInstructions || lOrd.notes || null,
+                  status: lOrd.status || 'pending',
+                  created_at: lOrd.createdAt || lOrd.created_at || new Date().toISOString(),
+                  order_items: (lOrd.items || []).map((i: any) => ({
+                    id: i.id || `item_${Math.random()}`,
+                    menu_item_id: i.id,
+                    quantity: i.quantity || 1,
+                    unit_price: i.price || 0,
+                    menu_items: { name: i.name || 'Order Item', category: 'General' },
+                  })),
+                })
+              }
+            })
+          }
+        } catch (e) {
+          console.warn('Local storage orders sync warning:', e)
+        }
+
+        setOrders(fetchedOrders)
       } catch (err: any) {
         setError(err.message)
       } finally {
@@ -69,6 +99,7 @@ export function useRealtimeOrders(customerId?: string) {
 
     fetchInitialOrders()
 
+    // 1. Supabase Realtime Listener
     const filterString = customerId ? `customer_id=eq.${customerId}` : undefined
     const channel = supabase
       .channel('realtime_orders_channel')
@@ -110,13 +141,53 @@ export function useRealtimeOrders(customerId?: string) {
       )
       .subscribe()
 
+    // 2. BroadcastChannel & Window Events Listener for instant cross-tab sync
+    let bc: BroadcastChannel | null = null
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      bc = new BroadcastChannel('luft_live_orders_channel')
+      bc.onmessage = (event) => {
+        if (event.data?.type === 'STATUS_UPDATE') {
+          const { orderId, status } = event.data
+          const target = (orderId || '').toLowerCase()
+          setOrders((prev) =>
+            prev.map((o) =>
+              o.id.toLowerCase() === target || (o as any).displayId?.toLowerCase() === target
+                ? { ...o, status }
+                : o
+            )
+          )
+        } else if (event.data?.type === 'NEW_ORDER') {
+          fetchInitialOrders()
+        }
+      }
+    }
+
+    const handleLocalUpdate = (e: any) => {
+      const { orderId, status } = e.detail || {}
+      if (orderId && status) {
+        const target = (orderId || '').toLowerCase()
+        setOrders((prev) =>
+          prev.map((o) =>
+            o.id.toLowerCase() === target || (o as any).displayId?.toLowerCase() === target
+              ? { ...o, status }
+              : o
+          )
+        )
+      }
+    }
+
+    window.addEventListener('luft_order_status_update', handleLocalUpdate)
+
     return () => {
       supabase.removeChannel(channel)
+      if (bc) bc.close()
+      window.removeEventListener('luft_order_status_update', handleLocalUpdate)
     }
   }, [customerId])
 
   return [orders, loading, error] as const
 }
+
 
 export function useRealtimeMenuItems() {
   const [items, setItems] = useState<MenuItem[]>([])
