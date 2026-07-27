@@ -131,11 +131,18 @@ export default function CheckoutPage() {
           status: 'pending',
           notes: notes ? `[Payment: ${paymentMethod.toUpperCase()}] | ${notes}` : `[Payment: ${paymentMethod.toUpperCase()}]`,
           created_at: new Date().toISOString(),
+          items: cartItems.map((c) => ({
+            id: c.item.id,
+            name: c.item.name,
+            quantity: c.quantity,
+            price: c.item.price,
+          })),
         })
         localStorage.setItem('platr_user_orders', JSON.stringify(localOrders.slice(0, 20)))
       } catch (err) {
         console.warn('LocalStorage order save failed:', err)
       }
+
 
       // Broadcast order live to Staff Dashboard
       notifyStaffOfNewOrder({
