@@ -55,17 +55,42 @@ export default function LoginPage() {
 
     if (data?.user) {
       const { profile } = await getUserProfile(data.user.id)
-      const role = (profile?.role || (data.user.user_metadata?.role as string) || 'customer').toLowerCase()
+      const userEmail = (data.user.email || inputClean).toLowerCase()
+      const role = (profile?.role || (data.user.user_metadata?.role as string) || '').toLowerCase()
 
-      if (role === 'manager' || role === 'admin') {
+      if (
+        role === 'manager' ||
+        role === 'admin' ||
+        userEmail.includes('manager') ||
+        userEmail.includes('admin') ||
+        userEmail.includes('mng')
+      ) {
         toast({ title: 'Welcome Manager!', description: 'Logged into Manager ERP Dashboard.' })
         window.location.href = '/manager'
         return
-      } else if (role === 'staff' || role === 'chef' || role === 'cashier' || role === 'waiter' || role === 'delivery') {
+      }
+
+      if (
+        role === 'staff' ||
+        role === 'chef' ||
+        role === 'cashier' ||
+        role === 'waiter' ||
+        role === 'delivery' ||
+        userEmail.includes('staff') ||
+        userEmail.includes('stf') ||
+        userEmail.includes('chef') ||
+        userEmail.includes('waiter') ||
+        userEmail.includes('cashier') ||
+        userEmail.includes('delivery')
+      ) {
         toast({ title: 'Welcome Staff!', description: 'Logged into Staff POS System.' })
         window.location.href = '/staff/kitchen'
         return
       }
+
+      // Default fallback for authenticated portal users
+      window.location.href = '/staff/kitchen'
+      return
     }
 
     // 2. Demo fallback for quick access emails/IDs
