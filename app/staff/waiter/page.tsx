@@ -24,7 +24,7 @@ import {
 
 export default function WaiterPage() {
   const { toast } = useToast()
-  const { tables, requests, updateTableStatus, addCustomerRequest, clearTableRequests, assignWaiterToTable } = useStaffStore()
+  const { tables, requests, updateTableStatus, addCustomerRequest, addRequestToTable, removeCustomerRequestFromTable, clearTableRequests, assignWaiterToTable } = useStaffStore()
   const [selectedTableId, setSelectedTableId] = useState<string>(tables[0]?.id || 't1')
 
   const selectedTable = tables.find((t) => t.id === selectedTableId) || tables[0]
@@ -173,7 +173,8 @@ export default function WaiterPage() {
                       size="sm"
                       onClick={() => {
                         addCustomerRequest({ tableNumber: selectedTable.tableNumber, type: reqType as any, priority: 'normal' })
-                        toast({ title: `Request Added to ${selectedTable.tableNumber}`, description: `Added: ${reqType}` })
+                        addRequestToTable(selectedTable.id, reqType)
+                        toast({ title: `⚡ Request Added (${selectedTable.tableNumber})`, description: `Added: ${reqType}` })
                       }}
                       className="justify-start border-zinc-800 bg-zinc-950 text-zinc-300 hover:bg-zinc-800 hover:text-amber-400 text-xs font-semibold rounded-xl h-10 transition-colors"
                     >
@@ -215,14 +216,23 @@ export default function WaiterPage() {
                     {selectedTable.customerRequests.map((req, idx) => (
                       <div key={idx} className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-950 p-3 text-xs">
                         <span className="font-bold text-amber-400">{req}</span>
-                        <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px]">
-                          Active Request
-                        </Badge>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            removeCustomerRequestFromTable(selectedTable.id, req)
+                            toast({ title: `Request Resolved`, description: `Marked "${req}" as complete.` })
+                          }}
+                          className="h-7 px-2.5 text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30 rounded-lg font-bold flex items-center gap-1"
+                        >
+                          <CheckCircle2 className="h-3 w-3" /> Mark Done
+                        </Button>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
+
             </CardContent>
           </Card>
         )}
