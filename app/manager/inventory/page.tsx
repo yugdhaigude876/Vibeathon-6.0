@@ -61,6 +61,7 @@ export default function ManagerInventoryPage() {
   const [realtimeItems] = useRealtimeMenuItems()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All')
+  const [dietaryFilter, setDietaryFilter] = useState('All')
 
   // Edit Stock Modal
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null)
@@ -109,9 +110,19 @@ export default function ManagerInventoryPage() {
       const query = searchQuery.trim().toLowerCase()
       const matchesSearch = !query || item.name.toLowerCase().includes(query) || item.category.toLowerCase().includes(query)
 
-      return matchesCategory && matchesSearch
+      const nameLower = item.name.toLowerCase()
+      const isNonVeg = ['chicken', 'mutton', 'lamb', 'fish', 'prawn', 'seafood', 'bacon', 'kebab', 'salmon'].some(kw => nameLower.includes(kw))
+      const isVeg = !isNonVeg
+
+      let matchesDiet = true
+      if (dietaryFilter === 'Veg') matchesDiet = isVeg
+      if (dietaryFilter === 'Non-Veg') matchesDiet = isNonVeg
+      if (dietaryFilter === 'Vegan') matchesDiet = isVeg && (nameLower.includes('vegan') || nameLower.includes('avocado') || nameLower.includes('quinoa') || nameLower.includes('edamame'))
+      if (dietaryFilter === 'Gluten-Free') matchesDiet = nameLower.includes('gluten') || nameLower.includes('salad') || nameLower.includes('soup')
+
+      return matchesCategory && matchesSearch && matchesDiet
     })
-  }, [inventoryItems, selectedCategory, searchQuery])
+  }, [inventoryItems, selectedCategory, searchQuery, dietaryFilter])
 
   const handleOpenEdit = (item: InventoryItem) => {
     setEditingItem(item)
@@ -280,32 +291,59 @@ export default function ManagerInventoryPage() {
       </Card>
 
       {/* Filter & Search Bar */}
-      <div className="grid gap-4 md:grid-cols-3 bg-zinc-900/70 p-4 rounded-2xl border border-zinc-800">
-        <div className="relative md:col-span-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-          <Input
-            placeholder="Search stock item..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 bg-zinc-950 border-zinc-800 text-xs text-zinc-100 focus-visible:ring-amber-500"
-          />
+      <div className="space-y-3 bg-zinc-900/70 p-4 rounded-2xl border border-zinc-800">
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="relative md:col-span-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+            <Input
+              placeholder="Search stock item..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 bg-zinc-950 border-zinc-800 text-xs text-zinc-100 focus-visible:ring-amber-500"
+            />
+          </div>
+
+          <div className="md:col-span-2 flex items-center gap-2 overflow-x-auto no-scrollbar">
+            <span className="text-xs text-zinc-400 shrink-0 font-medium">Menu Category:</span>
+            {categories.map((cat) => (
+              <Badge
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`cursor-pointer px-3 py-1 text-xs shrink-0 transition-all ${
+                  selectedCategory === cat
+                    ? 'bg-amber-500 text-zinc-950 font-bold'
+                    : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                {cat}
+              </Badge>
+            ))}
+          </div>
         </div>
 
-        <div className="md:col-span-2 flex items-center gap-2 overflow-x-auto no-scrollbar">
-          <span className="text-xs text-zinc-400 shrink-0 font-medium">Category:</span>
-          {categories.map((cat) => (
-            <Badge
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`cursor-pointer px-3 py-1 text-xs shrink-0 transition-all ${
-                selectedCategory === cat
-                  ? 'bg-amber-500 text-zinc-950 font-bold'
-                  : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:text-zinc-200'
-              }`}
-            >
-              {cat}
-            </Badge>
-          ))}
+        {/* Dietary & Menu Type Quick Filters */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-800/80 pt-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-zinc-400 font-medium">Dietary Type:</span>
+            {['All', 'Veg', 'Non-Veg', 'Vegan', 'Gluten-Free'].map((diet) => (
+              <Badge
+                key={diet}
+                onClick={() => setDietaryFilter(diet)}
+                className={`cursor-pointer px-2.5 py-0.5 text-[11px] transition-all ${
+                  dietaryFilter === diet
+                    ? 'bg-emerald-500 text-zinc-950 font-bold'
+                    : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                {diet}
+              </Badge>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 text-xs text-zinc-400">
+            <Tag className="h-3.5 w-3.5 text-amber-400" />
+            <span>Showing <span className="font-bold text-amber-400">{filteredInventory.length}</span> menu items across all categories</span>
+          </div>
         </div>
       </div>
 
