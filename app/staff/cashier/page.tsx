@@ -72,7 +72,7 @@ export default function CashierPage() {
           {/* Orders Selector List */}
           <div className="space-y-3">
             <h2 className="text-sm font-extrabold uppercase text-zinc-300 tracking-wider">Unpaid & Active Orders</h2>
-            {orders.map((ord) => (
+            {orders.map((ord: EnterpriseOrder) => (
               <button
                 key={ord.id}
                 onClick={() => {

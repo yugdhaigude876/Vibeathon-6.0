@@ -9,6 +9,7 @@ export interface StaffProfile {
   clockedIn: boolean
   clockInTime?: string | null
   breakStatus?: 'none' | 'break'
+  breakSeconds?: number
   hoursWorkedToday: number
   performanceScore: number
 }
@@ -33,6 +34,7 @@ export interface ExtendedOrderItem {
   spiceLevel?: 'Mild' | 'Medium' | 'Spicy' | 'Extra Hot'
   allergies?: string[]
   specialNotes?: string
+  isCancelled?: boolean
 }
 
 export interface EnterpriseOrder {
@@ -53,6 +55,9 @@ export interface EnterpriseOrder {
   isVip: boolean
   otp?: string
   assignedDeliveryStaff?: string
+  deliveryStatus?: 'unassigned' | 'assigned' | 'out_for_delivery' | 'delivered'
+  splitBills?: number[]
+  cancelledReason?: string
 }
 
 export interface WaiterTable {
@@ -66,12 +71,15 @@ export interface WaiterTable {
   currentBillAmount: number
   customerRequests: string[]
   notes?: string
+  mergedWithTableNumber?: string
+  reservationName?: string
+  reservationTime?: string
 }
 
 export interface CustomerTicketRequest {
   id: string
   tableNumber: string
-  type: 'Water' | 'Extra Sauce' | 'Extra Plates' | 'Tissue' | 'Spoon' | 'Call Waiter' | 'Birthday Celebration' | 'Special Note'
+  type: 'Water' | 'Extra Sauce' | 'Extra Plates' | 'Tissue' | 'Spoon' | 'Call Waiter' | 'Cancel Item' | 'Birthday Celebration' | 'Special Note'
   note?: string
   time: string
   status: 'pending' | 'in_progress' | 'completed'
@@ -104,6 +112,7 @@ export interface StaffNotification {
   title: string
   message: string
   timestamp: string
-  type: 'urgent_order' | 'vip' | 'large_order' | 'request' | 'shift' | 'inventory'
+  type: 'urgent_order' | 'vip' | 'large_order' | 'cancelled' | 'request' | 'shift' | 'inventory'
   read: boolean
 }
+

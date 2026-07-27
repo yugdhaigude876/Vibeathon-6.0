@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -11,13 +11,11 @@ import {
   LayoutDashboard,
   Clock,
   Bell,
-  Sliders,
-  LogOut,
-  User,
   Coffee,
-  ShieldCheck,
   CheckCircle2,
-  TrendingUp,
+  AlertTriangle,
+  Sparkles,
+  X,
 } from 'lucide-react'
 import { useStaffStore } from '@/lib/staffStore'
 import { StaffRole } from '@/lib/staffTypes'
@@ -25,7 +23,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 
 const ROLE_NAVIGATION: { role: StaffRole; label: string; href: string; icon: React.ElementType }[] = [
-  { role: 'chef', label: 'Executive Dashboard', href: '/staff/dashboard', icon: LayoutDashboard },
+  { role: 'chef', label: 'Dashboard', href: '/staff/dashboard', icon: LayoutDashboard },
   { role: 'chef', label: 'Kitchen KDS', href: '/staff/kitchen', icon: ChefHat },
   { role: 'cashier', label: 'Cashier & POS', href: '/staff/cashier', icon: Receipt },
   { role: 'waiter', label: 'Waiter Tables', href: '/staff/waiter', icon: UtensilsCrossed },
@@ -34,7 +32,33 @@ const ROLE_NAVIGATION: { role: StaffRole; label: string; href: string; icon: Rea
 
 export function StaffHeader() {
   const pathname = usePathname()
-  const { profile, setRole, toggleClockIn, toggleBreak, notifications, markNotificationRead } = useStaffStore()
+  const {
+    profile,
+    setRole,
+    toggleClockIn,
+    toggleBreak,
+    incrementBreakSeconds,
+    notifications,
+    markNotificationRead,
+    clearAllNotifications,
+  } = useStaffStore()
+
+  const [showNotifications, setShowNotifications] = useState(false)
+
+  // Live Break Timer Tick Effect
+  useEffect(() => {
+    if (profile.breakStatus !== 'break') return
+    const interval = setInterval(() => {
+      incrementBreakSeconds()
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [profile.breakStatus, incrementBreakSeconds])
+
+  const formatBreakTime = (totalSecs: number = 0) => {
+    const mins = Math.floor(totalSecs / 60)
+    const secs = totalSecs % 60
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+  }
 
   const unreadCount = notifications.filter((n) => !n.read).length
 
@@ -101,7 +125,66 @@ export function StaffHeader() {
 
         {/* Right Shift Control & Staff Profile */}
         <div className="flex items-center gap-3">
-          {/* Shift Clock-in Status */}
+          {/* Notifications Bell */}
+          <div className="relative">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="relative h-9 w-9 border-zinc-800 bg-zinc-900 text-zinc-300 hover:text-zinc-100 rounded-xl"
+            >
+              <Bell className="h-4 w-4" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[10px] font-black text-zinc-950 animate-pulse">
+                  {unreadCount}
+                </span>
+              )}
+            </Button>
+
+            {/* Notifications Popover */}
+            {showNotifications && (
+              <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl border border-zinc-800 bg-zinc-950 p-4 shadow-2xl z-50 space-y-3">
+                <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                  <span className="text-xs font-black uppercase text-amber-400 flex items-center gap-1.5">
+                    <Sparkles className="h-3.5 w-3.5" /> Staff Notifications
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={clearAllNotifications}
+                      className="text-[10px] font-semibold text-zinc-400 hover:text-zinc-200"
+                    >
+                      Clear All
+                    </button>
+                    <button onClick={() => setShowNotifications(false)}>
+                      <X className="h-4 w-4 text-zinc-400 hover:text-zinc-100" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                  {notifications.map((n) => (
+                    <div
+                      key={n.id}
+                      onClick={() => markNotificationRead(n.id)}
+                      className={`p-3 rounded-xl border transition-all cursor-pointer ${
+                        !n.read
+                          ? 'border-amber-500/30 bg-amber-950/20 text-zinc-100'
+                          : 'border-zinc-800/60 bg-zinc-900/40 text-zinc-400'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between text-xs font-bold">
+                        <span>{n.title}</span>
+                        <span className="text-[10px] font-mono text-zinc-500">{n.timestamp}</span>
+                      </div>
+                      <p className="text-xs mt-1 text-zinc-300 leading-snug">{n.message}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Shift Clock-in & Break Controls */}
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -123,12 +206,14 @@ export function StaffHeader() {
               onClick={toggleBreak}
               className={`h-9 border-zinc-800 font-semibold text-xs rounded-xl ${
                 profile.breakStatus === 'break'
-                  ? 'bg-amber-500 text-zinc-950 border-amber-400'
+                  ? 'bg-amber-500 text-zinc-950 border-amber-400 font-extrabold animate-pulse'
                   : 'bg-zinc-900 text-zinc-300 hover:bg-zinc-800'
               }`}
             >
               <Coffee className="mr-1.5 h-3.5 w-3.5" />
-              {profile.breakStatus === 'break' ? 'On Break' : 'Take Break'}
+              {profile.breakStatus === 'break'
+                ? `On Break (${formatBreakTime(profile.breakSeconds)})`
+                : 'Take Break'}
             </Button>
           </div>
 

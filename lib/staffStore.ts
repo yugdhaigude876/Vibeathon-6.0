@@ -9,6 +9,7 @@ import {
   InventoryAlert,
   StaffNotification,
   StaffPerformanceStats,
+  ExtendedOrderItem,
 } from './staffTypes'
 
 interface StaffStoreState {
@@ -17,16 +18,24 @@ interface StaffStoreState {
   setRole: (role: StaffRole) => void
   toggleClockIn: () => void
   toggleBreak: () => void
+  incrementBreakSeconds: () => void
 
   // Orders State
   orders: EnterpriseOrder[]
   updateOrderStatus: (orderId: string, status: OrderWorkflowStatus) => void
+  rejectOrder: (orderId: string, reason?: string) => void
+  dispatchOrder: (orderId: string, riderName?: string) => void
+  assignDeliveryRider: (orderId: string, riderName: string) => void
+  cancelOrderItem: (orderId: string, itemId: string) => void
   addOrder: (order: EnterpriseOrder) => void
 
   // Tables State
   tables: WaiterTable[]
   updateTableStatus: (tableId: string, status: WaiterTable['status']) => void
   assignWaiterToTable: (tableId: string, waiterName: string) => void
+  reserveTable: (tableId: string, guestName: string, time: string, guestCount: number) => void
+  mergeTables: (targetTableId: string, sourceTableId: string) => void
+  splitBill: (orderId: string, splitParts: number) => void
   addRequestToTable: (tableId: string, request: string) => void
   clearTableRequests: (tableId: string) => void
 
@@ -42,6 +51,7 @@ interface StaffStoreState {
   // Notifications
   notifications: StaffNotification[]
   markNotificationRead: (id: string) => void
+  clearAllNotifications: () => void
 
   // Performance Stats
   performance: StaffPerformanceStats
@@ -56,6 +66,7 @@ const INITIAL_PROFILE: StaffProfile = {
   clockedIn: true,
   clockInTime: '16:00 PM',
   breakStatus: 'none',
+  breakSeconds: 0,
   hoursWorkedToday: 5.5,
   performanceScore: 96,
 }
@@ -95,6 +106,7 @@ const INITIAL_ORDERS: EnterpriseOrder[] = [
     isVip: false,
     otp: '4821',
     assignedDeliveryStaff: 'Vikram Singh',
+    deliveryStatus: 'assigned',
     items: [
       { id: '4', name: 'Grande Burrito Bowl', quantity: 1, price: 590, spiceLevel: 'Mild' },
       { id: '5', name: 'Chipotle Chicken Quesadilla', quantity: 1, price: 660 },
@@ -141,7 +153,7 @@ const INITIAL_TABLES: WaiterTable[] = [
   { id: 't2', tableNumber: 'T-02', capacity: 4, occupancy: 4, status: 'billing', assignedWaiter: 'Rahul Verma', currentOrderId: 'ord-103', currentBillAmount: 2400, customerRequests: ['Print Bill'] },
   { id: 't3', tableNumber: 'T-03', capacity: 6, occupancy: 0, status: 'available', currentBillAmount: 0, customerRequests: [] },
   { id: 't4', tableNumber: 'T-04', capacity: 4, occupancy: 3, status: 'occupied', assignedWaiter: 'Simran Kaur', currentOrderId: 'ord-101', currentBillAmount: 1840, customerRequests: ['Call Waiter'] },
-  { id: 't5', tableNumber: 'T-05', capacity: 2, occupancy: 0, status: 'reserved', currentBillAmount: 0, customerRequests: [], notes: 'Reserved for 8:30 PM (Mr. Bajaj)' },
+  { id: 't5', tableNumber: 'T-05', capacity: 2, occupancy: 0, status: 'reserved', currentBillAmount: 0, customerRequests: [], notes: 'Reserved for 8:30 PM (Mr. Bajaj)', reservationName: 'Mr. Bajaj', reservationTime: '08:30 PM' },
   { id: 't6', tableNumber: 'T-06', capacity: 8, occupancy: 0, status: 'cleaning', currentBillAmount: 0, customerRequests: [] },
 ]
 
@@ -150,6 +162,7 @@ const INITIAL_REQUESTS: CustomerTicketRequest[] = [
   { id: 'req-2', tableNumber: 'T-01', type: 'Extra Sauce', note: 'Chipotle mayo for fries', time: '5 mins ago', status: 'in_progress', priority: 'normal', assignedStaff: 'Rahul Verma' },
   { id: 'req-3', tableNumber: 'T-02', type: 'Water', note: 'Warm water with lemon', time: '10 mins ago', status: 'completed', priority: 'normal', assignedStaff: 'Rahul Verma' },
   { id: 'req-4', tableNumber: 'T-04', type: 'Birthday Celebration', note: 'Bring dessert candle & song at 9 PM', time: '12 mins ago', status: 'pending', priority: 'high' },
+  { id: 'req-5', tableNumber: 'T-01', type: 'Extra Plates', note: 'Requesting 2 additional side plates', time: '15 mins ago', status: 'pending', priority: 'normal' },
 ]
 
 const INITIAL_INVENTORY: InventoryAlert[] = [
@@ -163,12 +176,13 @@ const INITIAL_NOTIFICATIONS: StaffNotification[] = [
   { id: 'n1', title: '🚨 VIP Table T-04 Order', message: 'Order #LUFT-101 requires extra spice & priority prep.', timestamp: '8m ago', type: 'vip', read: false },
   { id: 'n2', title: '⚠️ Low Stock Alert', message: 'Truffle Oil is below critical threshold (120ml left).', timestamp: '15m ago', type: 'inventory', read: false },
   { id: 'n3', title: '🎂 Celebration Request', message: 'Table T-04 requested Birthday Celebration prep.', timestamp: '12m ago', type: 'request', read: true },
+  { id: 'n4', title: '⚡ Urgent Large Order', message: 'Delivery Order #LUFT-102 assigned to Vikram Singh.', timestamp: '20m ago', type: 'large_order', read: false },
 ]
 
 export const useStaffStore = create<StaffStoreState>((set) => ({
   profile: INITIAL_PROFILE,
-  setRole: (role) =>
-    set((state) => ({
+  setRole: (role: StaffRole) =>
+    set((state: StaffStoreState) => ({
       profile: {
         ...state.profile,
         role,
@@ -185,7 +199,7 @@ export const useStaffStore = create<StaffStoreState>((set) => ({
       },
     })),
   toggleClockIn: () =>
-    set((state) => ({
+    set((state: StaffStoreState) => ({
       profile: {
         ...state.profile,
         clockedIn: !state.profile.clockedIn,
@@ -193,50 +207,159 @@ export const useStaffStore = create<StaffStoreState>((set) => ({
       },
     })),
   toggleBreak: () =>
-    set((state) => ({
+    set((state: StaffStoreState) => ({
       profile: {
         ...state.profile,
         breakStatus: state.profile.breakStatus === 'break' ? 'none' : 'break',
       },
     })),
+  incrementBreakSeconds: () =>
+    set((state: StaffStoreState) => ({
+      profile: {
+        ...state.profile,
+        breakSeconds: (state.profile.breakSeconds || 0) + 1,
+      },
+    })),
 
   orders: INITIAL_ORDERS,
-  updateOrderStatus: (orderId, status) =>
-    set((state) => ({
-      orders: state.orders.map((ord) => (ord.id === orderId ? { ...ord, status } : ord)),
+  updateOrderStatus: (orderId: string, status: OrderWorkflowStatus) =>
+    set((state: StaffStoreState) => ({
+      orders: state.orders.map((ord: EnterpriseOrder) => (ord.id === orderId ? { ...ord, status } : ord)),
     })),
-  addOrder: (order) =>
-    set((state) => ({
+  rejectOrder: (orderId: string, reason = 'Kitchen capacity full') =>
+    set((state: StaffStoreState) => ({
+      orders: state.orders.map((ord: EnterpriseOrder) =>
+        ord.id === orderId ? { ...ord, status: 'cancelled', cancelledReason: reason } : ord
+      ),
+      notifications: [
+        {
+          id: `n-${Date.now()}`,
+          title: `❌ Order ${orderId} Cancelled`,
+          message: `Order was rejected. Reason: ${reason}`,
+          timestamp: 'Just now',
+          type: 'cancelled',
+          read: false,
+        },
+        ...state.notifications,
+      ],
+    })),
+  dispatchOrder: (orderId: string, riderName = 'Rider Vikram Singh') =>
+    set((state: StaffStoreState) => ({
+      orders: state.orders.map((ord: EnterpriseOrder) =>
+        ord.id === orderId
+          ? { ...ord, status: 'picked_up', deliveryStatus: 'out_for_delivery', assignedDeliveryStaff: riderName }
+          : ord
+      ),
+    })),
+  assignDeliveryRider: (orderId: string, riderName: string) =>
+    set((state: StaffStoreState) => ({
+      orders: state.orders.map((ord: EnterpriseOrder) =>
+        ord.id === orderId ? { ...ord, assignedDeliveryStaff: riderName, deliveryStatus: 'assigned' } : ord
+      ),
+    })),
+  cancelOrderItem: (orderId: string, itemId: string) =>
+    set((state: StaffStoreState) => ({
+      orders: state.orders.map((ord: EnterpriseOrder) => {
+        if (ord.id !== orderId) return ord
+        const updatedItems = ord.items.map((item: ExtendedOrderItem) =>
+          item.id === itemId ? { ...item, isCancelled: true } : item
+        )
+        const newTotal = updatedItems
+          .filter((i: ExtendedOrderItem) => !i.isCancelled)
+          .reduce((sum: number, i: ExtendedOrderItem) => sum + i.price * i.quantity, 0)
+        return { ...ord, items: updatedItems, totalAmount: newTotal }
+      }),
+    })),
+  addOrder: (order: EnterpriseOrder) =>
+    set((state: StaffStoreState) => ({
       orders: [order, ...state.orders],
     })),
 
   tables: INITIAL_TABLES,
-  updateTableStatus: (tableId, status) =>
-    set((state) => ({
-      tables: state.tables.map((tbl) => (tbl.id === tableId ? { ...tbl, status } : tbl)),
+  updateTableStatus: (tableId: string, status: WaiterTable['status']) =>
+    set((state: StaffStoreState) => ({
+      tables: state.tables.map((tbl: WaiterTable) => (tbl.id === tableId ? { ...tbl, status } : tbl)),
     })),
-  assignWaiterToTable: (tableId, waiterName) =>
-    set((state) => ({
-      tables: state.tables.map((tbl) => (tbl.id === tableId ? { ...tbl, assignedWaiter: waiterName } : tbl)),
+  assignWaiterToTable: (tableId: string, waiterName: string) =>
+    set((state: StaffStoreState) => ({
+      tables: state.tables.map((tbl: WaiterTable) => (tbl.id === tableId ? { ...tbl, assignedWaiter: waiterName } : tbl)),
     })),
-  addRequestToTable: (tableId, request) =>
-    set((state) => ({
-      tables: state.tables.map((tbl) =>
+  reserveTable: (tableId: string, guestName: string, time: string, guestCount: number) =>
+    set((state: StaffStoreState) => ({
+      tables: state.tables.map((tbl: WaiterTable) =>
+        tbl.id === tableId
+          ? {
+              ...tbl,
+              status: 'reserved',
+              reservationName: guestName,
+              reservationTime: time,
+              occupancy: 0,
+              capacity: Math.max(tbl.capacity, guestCount),
+              notes: `Reserved for ${time} (${guestName})`,
+            }
+          : tbl
+      ),
+    })),
+  mergeTables: (targetTableId: string, sourceTableId: string) =>
+    set((state: StaffStoreState) => {
+      const targetTable = state.tables.find((t: WaiterTable) => t.id === targetTableId)
+      const sourceTable = state.tables.find((t: WaiterTable) => t.id === sourceTableId)
+      if (!targetTable || !sourceTable) return state
+
+      const combinedBill = targetTable.currentBillAmount + sourceTable.currentBillAmount
+      const combinedOccupancy = targetTable.occupancy + sourceTable.occupancy
+
+      return {
+        tables: state.tables.map((tbl: WaiterTable) => {
+          if (tbl.id === targetTableId) {
+            return {
+              ...tbl,
+              occupancy: combinedOccupancy,
+              currentBillAmount: combinedBill,
+              mergedWithTableNumber: sourceTable.tableNumber,
+              notes: `Merged with ${sourceTable.tableNumber}`,
+            }
+          }
+          if (tbl.id === sourceTableId) {
+            return {
+              ...tbl,
+              status: 'occupied',
+              currentBillAmount: 0,
+              mergedWithTableNumber: targetTable.tableNumber,
+              notes: `Merged into ${targetTable.tableNumber}`,
+            }
+          }
+          return tbl
+        }),
+      }
+    }),
+  splitBill: (orderId: string, splitParts: number) =>
+    set((state: StaffStoreState) => ({
+      orders: state.orders.map((ord: EnterpriseOrder) => {
+        if (ord.id !== orderId) return ord
+        const equalPart = Math.round(ord.totalAmount / Math.max(1, splitParts))
+        const parts = Array(splitParts).fill(equalPart)
+        return { ...ord, splitBills: parts }
+      }),
+    })),
+  addRequestToTable: (tableId: string, request: string) =>
+    set((state: StaffStoreState) => ({
+      tables: state.tables.map((tbl: WaiterTable) =>
         tbl.id === tableId ? { ...tbl, customerRequests: Array.from(new Set([...tbl.customerRequests, request])) } : tbl
       ),
     })),
-  clearTableRequests: (tableId) =>
-    set((state) => ({
-      tables: state.tables.map((tbl) => (tbl.id === tableId ? { ...tbl, customerRequests: [] } : tbl)),
+  clearTableRequests: (tableId: string) =>
+    set((state: StaffStoreState) => ({
+      tables: state.tables.map((tbl: WaiterTable) => (tbl.id === tableId ? { ...tbl, customerRequests: [] } : tbl)),
     })),
 
   requests: INITIAL_REQUESTS,
-  updateRequestStatus: (requestId, status) =>
-    set((state) => ({
-      requests: state.requests.map((req) => (req.id === requestId ? { ...req, status } : req)),
+  updateRequestStatus: (requestId: string, status: CustomerTicketRequest['status']) =>
+    set((state: StaffStoreState) => ({
+      requests: state.requests.map((req: CustomerTicketRequest) => (req.id === requestId ? { ...req, status } : req)),
     })),
-  addCustomerRequest: (req) =>
-    set((state) => ({
+  addCustomerRequest: (req: Omit<CustomerTicketRequest, 'id' | 'time' | 'status'>) =>
+    set((state: StaffStoreState) => ({
       requests: [
         {
           ...req,
@@ -249,18 +372,23 @@ export const useStaffStore = create<StaffStoreState>((set) => ({
     })),
 
   inventoryAlerts: INITIAL_INVENTORY,
-  toggleStockStatus: (alertId) =>
-    set((state) => ({
-      inventoryAlerts: state.inventoryAlerts.map((inv) =>
+  toggleStockStatus: (alertId: string) =>
+    set((state: StaffStoreState) => ({
+      inventoryAlerts: state.inventoryAlerts.map((inv: InventoryAlert) =>
         inv.id === alertId ? { ...inv, isOutOfStock: !inv.isOutOfStock } : inv
       ),
     })),
 
   notifications: INITIAL_NOTIFICATIONS,
-  markNotificationRead: (id) =>
-    set((state) => ({
-      notifications: state.notifications.map((n) => (n.id === id ? { ...n, read: true } : n)),
+  markNotificationRead: (id: string) =>
+    set((state: StaffStoreState) => ({
+      notifications: state.notifications.map((n: StaffNotification) => (n.id === id ? { ...n, read: true } : n)),
     })),
+  clearAllNotifications: () =>
+    set((state: StaffStoreState) => ({
+      notifications: state.notifications.map((n: StaffNotification) => ({ ...n, read: true })),
+    })),
+
 
   performance: {
     ordersCompleted: 42,
@@ -273,3 +401,4 @@ export const useStaffStore = create<StaffStoreState>((set) => ({
     rank: 2,
   },
 }))
+

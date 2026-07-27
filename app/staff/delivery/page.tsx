@@ -18,9 +18,11 @@ import {
   RotateCcw,
 } from 'lucide-react'
 
+import { EnterpriseOrder, ExtendedOrderItem } from '@/lib/staffTypes'
+
 export default function DeliveryPage() {
   const { orders, updateOrderStatus } = useStaffStore()
-  const deliveryOrders = orders.filter((o) => o.orderType === 'delivery')
+  const deliveryOrders = orders.filter((o: EnterpriseOrder) => o.orderType === 'delivery')
 
   const [otpInputs, setOtpInputs] = useState<Record<string, string>>({})
   const [otpErrors, setOtpErrors] = useState<Record<string, string>>({})
@@ -53,7 +55,7 @@ export default function DeliveryPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {deliveryOrders.map((ord) => (
+          {deliveryOrders.map((ord: EnterpriseOrder) => (
             <Card key={ord.id} className="border border-zinc-800 bg-zinc-900/80 rounded-3xl overflow-hidden">
               <CardHeader className="p-5 pb-3 border-b border-zinc-800 flex flex-row items-center justify-between">
                 <div>
@@ -81,12 +83,13 @@ export default function DeliveryPage() {
                 </div>
 
                 <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-3 space-y-1">
-                  {ord.items.map((item) => (
+                  {ord.items.map((item: ExtendedOrderItem) => (
                     <div key={item.id} className="flex justify-between text-zinc-300">
                       <span>{item.quantity}x {item.name}</span>
                       <span className="font-mono">₹{item.price * item.quantity}</span>
                     </div>
                   ))}
+
                   <div className="border-t border-zinc-800 pt-1 flex justify-between font-bold text-amber-400">
                     <span>Total Amount</span>
                     <span className="font-mono">₹{ord.totalAmount}</span>
