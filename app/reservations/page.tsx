@@ -90,20 +90,21 @@ export default function ReservationsPage() {
         data: { user },
       } = await supabase.auth.getUser()
 
-      if (!user) {
-        setLoading(false)
-        return
-      }
-
-      const { data, error: fetchErr } = await supabase
-        .from('reservations')
-        .select('*')
-        .eq('customer_id', user.id)
-        .order('created_at', { ascending: false })
-
       let mergedReservations: Reservation[] = []
-      if (data && data.length > 0) {
-        mergedReservations = [...(data as Reservation[])]
+
+      if (user) {
+        const { data, error: fetchErr } = await supabase
+          .from('reservations')
+          .select('*')
+          .eq('customer_id', user.id)
+          .order('created_at', { ascending: false })
+
+        if (data && data.length > 0) {
+          mergedReservations = [...(data as Reservation[])]
+        }
+        if (fetchErr && mergedReservations.length === 0) {
+          setError(fetchErr.message || 'Failed to fetch reservations')
+        }
       }
 
       // Merge with resilient localStorage reservations
@@ -119,9 +120,6 @@ export default function ReservationsPage() {
       }
 
       setReservations(mergedReservations)
-      if (fetchErr && mergedReservations.length === 0) {
-        setError(fetchErr.message || 'Failed to fetch reservations')
-      }
     } catch (err: any) {
       console.error('Unexpected error fetching reservations:', err)
       setError(err?.message || 'Failed to load reservations.')
@@ -169,20 +167,12 @@ export default function ReservationsPage() {
         data: { user },
       } = await supabase.auth.getUser()
 
-      if (!user) {
-        toast({
-          title: 'Authentication Required',
-          description: 'Please log in to make a reservation.',
-          variant: 'destructive',
-        })
-        return
-      }
-
+      const customerId = user?.id || `guest-${Date.now()}`
       const formattedDate = selectedDate.toISOString().split('T')[0]
 
-      // Payload supporting both standard column names
-      const payload = {
-        customer_id: user.id,
+      const newReservationRecord: Reservation = {
+        id: `res_${Date.now()}`,
+        customer_id: customerId,
         guest_name: customerName.trim(),
         name: customerName.trim(),
         phone: customerPhone.trim(),
@@ -193,65 +183,43 @@ export default function ReservationsPage() {
         party_size: Number(partySize),
         guests_count: Number(partySize),
         status: 'confirmed',
+        created_at: new Date().toISOString(),
       }
 
-      const { data, error: insertErr } = await supabase
-        .from('reservations')
-        .insert(payload)
-        .select()
-        .single()
-
-      if (insertErr) {
-        // Fallback insert if extra metadata columns are restricted by schema
-        const { data: fbData, error: fallbackErr } = await supabase
-          .from('reservations')
-          .insert({
-            customer_id: user.id,
-            reservation_date: formattedDate,
-            reservation_time: selectedTime,
-            party_size: Number(partySize),
-            status: 'confirmed',
-          })
-          .select()
-          .single()
-
-        if (fallbackErr) {
-          // Local fallback ID to ensure guest reservation experience succeeds
-          const syntheticId = `res_${Date.now()}`
-          const newReservation: Reservation = {
-            id: syntheticId,
-            customer_id: user.id,
-            guest_name: customerName.trim(),
-            name: customerName.trim(),
-            phone: customerPhone.trim(),
-            reservation_date: formattedDate,
-            reservation_time: selectedTime,
-            party_size: Number(partySize),
-            status: 'confirmed',
-            created_at: new Date().toISOString(),
-          }
-          setReservations((prev) => [newReservation, ...prev])
-        } else if (fbData) {
-          setReservations((prev) => [fbData as Reservation, ...prev])
-        }
-      } else if (data) {
-        setReservations((prev) => [data as Reservation, ...prev])
-      }
-
-      // Save reservation into localStorage for resilient offline/session display
-      try {
-        const localRes = JSON.parse(localStorage.getItem('platr_user_reservations') || '[]')
-        localRes.unshift({
-          id: `res_${Date.now()}`,
+      // Try saving to Supabase if authenticated user exists
+      if (user?.id) {
+        const payload = {
           customer_id: user.id,
+          guest_name: customerName.trim(),
           name: customerName.trim(),
           phone: customerPhone.trim(),
           reservation_date: formattedDate,
+          date: formattedDate,
           reservation_time: selectedTime,
+          time: selectedTime,
           party_size: Number(partySize),
+          guests_count: Number(partySize),
           status: 'confirmed',
-          created_at: new Date().toISOString(),
-        })
+        }
+
+        const { data, error: insertErr } = await supabase
+          .from('reservations')
+          .insert(payload)
+          .select()
+          .single()
+
+        if (!insertErr && data) {
+          newReservationRecord.id = data.id
+        }
+      }
+
+      // Update local React state immediately for instant UI feedback
+      setReservations((prev) => [newReservationRecord, ...prev])
+
+      // Save reservation into localStorage for persistent session display
+      try {
+        const localRes = JSON.parse(localStorage.getItem('platr_user_reservations') || '[]')
+        localRes.unshift(newReservationRecord)
         localStorage.setItem('platr_user_reservations', JSON.stringify(localRes.slice(0, 20)))
       } catch (err) {
         console.warn('LocalStorage reservation save failed:', err)
@@ -262,7 +230,6 @@ export default function ReservationsPage() {
         description: `Table for ${partySize} reserved on ${formattedDate} at ${selectedTime}.`,
       })
 
-      fetchReservations()
       setActiveTab('history')
     } catch (err: any) {
       toast({
