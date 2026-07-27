@@ -85,44 +85,108 @@ export default function ManagerPage() {
 
   const [realtimeOrders, ordersLoading] = useRealtimeOrders()
   const [realtimeReservations, resLoading] = useRealtimeReservations()
+  const { orders: staffOrders } = useStaffStore()
 
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [orderFilter, setOrderFilter] = useState('all')
   const [updatingId, setUpdatingId] = useState<string | null>(null)
 
+  // Synchronized Master Orders List (Supabase + Staff Store + Local Storage)
+  const allMasterOrders = useMemo(() => {
+    const merged: Order[] = [...realtimeOrders]
+
+    staffOrders.forEach((sOrd) => {
+      const targetDisplay = (sOrd.displayId || '').toLowerCase()
+      const targetId = (sOrd.id || '').toLowerCase()
+
+      const existingIdx = merged.findIndex(
+        (m) =>
+          m.id.toLowerCase() === targetId ||
+          (m as any).displayId?.toLowerCase() === targetDisplay ||
+          (m as any).displayId?.toLowerCase() === targetId
+      )
+
+      const formattedOrder: Order = {
+        id: sOrd.displayId || sOrd.id,
+        customer_id: sOrd.customerName || 'Dine-in Customer',
+        total_amount: sOrd.totalAmount,
+        notes: sOrd.specialInstructions || null,
+        status: sOrd.status,
+        created_at: sOrd.createdAt,
+        order_items: (sOrd.items || []).map((i) => ({
+          id: i.id,
+          menu_item_id: i.id,
+          quantity: i.quantity,
+          unit_price: i.price,
+          menu_items: { name: i.name, category: 'Main' },
+        })),
+      } as any
+
+      if (existingIdx >= 0) {
+        merged[existingIdx] = { ...merged[existingIdx], status: sOrd.status }
+      } else {
+        merged.unshift(formattedOrder)
+      }
+    })
+
+    return merged
+  }, [realtimeOrders, staffOrders])
+
+  // Synchronized Master Reservations List (Supabase + Local Storage)
+  const allMasterReservations = useMemo(() => {
+    const merged: any[] = [...realtimeReservations]
+
+    if (typeof window !== 'undefined') {
+      try {
+        const localResRaw = localStorage.getItem('platr_user_reservations')
+        if (localResRaw) {
+          const parsed = JSON.parse(localResRaw)
+          parsed.forEach((lRes: any) => {
+            if (!merged.some((r) => r.id === lRes.id)) {
+              merged.unshift(lRes)
+            }
+          })
+        }
+      } catch (e) {
+        console.warn(e)
+      }
+    }
+
+    return merged
+  }, [realtimeReservations])
+
   // Calculate Today's KPIs
   const { revenueToday, todaysOrders, completedOrdersCount, avgOrderValue } = useMemo(() => {
     const todayStr = new Date().toISOString().split('T')[0]
-    const todays = realtimeOrders.filter((order) => {
+    const todays = allMasterOrders.filter((order) => {
       const orderDate = new Date(order.created_at).toISOString().split('T')[0]
       return orderDate === todayStr
     })
 
-    const completedOrReady = todays.filter(
-      (o) => o.status === 'completed' || o.status === 'ready'
-    )
+    const activeList = todays.length > 0 ? todays : allMasterOrders
+    const completedOrReady = activeList.filter((o) => o.status === 'completed' || o.status === 'ready' || o.status === 'delivered')
     const rev = completedOrReady.reduce((sum, o) => sum + Number(o.total_amount || 0), 0)
-    const completedCount = todays.filter((o) => o.status === 'completed').length
-    const aov = todays.length > 0 ? rev / Math.max(1, completedOrReady.length) : 0
+    const completedCount = activeList.filter((o) => o.status === 'completed' || o.status === 'delivered').length
+    const aov = activeList.length > 0 ? rev / Math.max(1, completedOrReady.length) : 0
 
     return {
       revenueToday: rev,
-      todaysOrders: todays.length > 0 ? todays : realtimeOrders,
+      todaysOrders: activeList,
       completedOrdersCount: completedCount,
       avgOrderValue: aov,
     }
-  }, [realtimeOrders])
+  }, [allMasterOrders])
 
   // Kitchen Metrics
   const kitchenMetrics = useMemo(() => {
-    const pending = realtimeOrders.filter((o) => o.status === 'pending')
-    const preparing = realtimeOrders.filter((o) => o.status === 'preparing')
-    const ready = realtimeOrders.filter((o) => o.status === 'ready')
+    const pending = allMasterOrders.filter((o) => o.status === 'pending')
+    const preparing = allMasterOrders.filter((o) => o.status === 'preparing')
+    const ready = allMasterOrders.filter((o) => o.status === 'ready')
 
     let longestMins = 0
     let longestId = ''
 
-    realtimeOrders.forEach((o) => {
+    allMasterOrders.forEach((o) => {
       if (o.status === 'pending' || o.status === 'preparing') {
         const mins = Math.floor((Date.now() - new Date(o.created_at).getTime()) / 60000)
         if (mins > longestMins) {
@@ -139,12 +203,12 @@ export default function ManagerPage() {
       longestMins,
       longestId,
     }
-  }, [realtimeOrders])
+  }, [allMasterOrders])
 
   // Best Sellers
   const bestSellers = useMemo(() => {
     const itemMap = new Map<string, number>()
-    realtimeOrders.forEach((o) => {
+    allMasterOrders.forEach((o) => {
       o.order_items?.forEach((item) => {
         const name = item.menu_items?.name || 'Popular Dish'
         itemMap.set(name, (itemMap.get(name) || 0) + item.quantity)
@@ -153,13 +217,14 @@ export default function ManagerPage() {
     return Array.from(itemMap.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
-  }, [realtimeOrders])
+  }, [allMasterOrders])
 
   // Filtered Orders Table
   const filteredOrdersTable = useMemo(() => {
     if (orderFilter === 'all') return todaysOrders
     return todaysOrders.filter((o) => o.status === orderFilter)
   }, [todaysOrders, orderFilter])
+
 
   const handleUpdateOrderStatus = async (orderId: string, nextStatus: string) => {
     try {
@@ -339,31 +404,46 @@ export default function ManagerPage() {
 
       {/* Main Tabs Navigation */}
       <Tabs defaultValue="orders" className="w-full space-y-6">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 bg-zinc-900 p-1 border border-zinc-800">
-          <TabsTrigger value="orders" className="data-[state=active]:bg-amber-600 data-[state=active]:text-zinc-950 font-bold text-xs">
-            Live Orders
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 bg-zinc-950/90 border border-white/10 p-1.5 rounded-2xl backdrop-blur-xl shadow-2xl h-auto">
+          <TabsTrigger
+            value="orders"
+            className="flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-extrabold tracking-wide transition-all duration-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#D4AF37] data-[state=active]:via-[#F1C85C] data-[state=active]:to-[#B68A25] data-[state=active]:text-zinc-950 data-[state=active]:shadow-[0_4px_20px_rgba(212,175,55,0.35)] text-zinc-400 hover:text-zinc-100"
+          >
+            Live Orders ({todaysOrders.length})
           </TabsTrigger>
-          <TabsTrigger value="reservations" className="data-[state=active]:bg-amber-600 data-[state=active]:text-zinc-950 font-bold text-xs">
-            Reservations
+          <TabsTrigger
+            value="reservations"
+            className="flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-extrabold tracking-wide transition-all duration-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#D4AF37] data-[state=active]:via-[#F1C85C] data-[state=active]:to-[#B68A25] data-[state=active]:text-zinc-950 data-[state=active]:shadow-[0_4px_20px_rgba(212,175,55,0.35)] text-zinc-400 hover:text-zinc-100"
+          >
+            Reservations ({allMasterReservations.length})
           </TabsTrigger>
-          <TabsTrigger value="kitchen" className="data-[state=active]:bg-amber-600 data-[state=active]:text-zinc-950 font-bold text-xs">
+          <TabsTrigger
+            value="kitchen"
+            className="flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-extrabold tracking-wide transition-all duration-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#D4AF37] data-[state=active]:via-[#F1C85C] data-[state=active]:to-[#B68A25] data-[state=active]:text-zinc-950 data-[state=active]:shadow-[0_4px_20px_rgba(212,175,55,0.35)] text-zinc-400 hover:text-zinc-100"
+          >
             Kitchen Pacing
           </TabsTrigger>
-          <TabsTrigger value="tables" className="data-[state=active]:bg-amber-600 data-[state=active]:text-zinc-950 font-bold text-xs">
+          <TabsTrigger
+            value="tables"
+            className="flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-extrabold tracking-wide transition-all duration-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#D4AF37] data-[state=active]:via-[#F1C85C] data-[state=active]:to-[#B68A25] data-[state=active]:text-zinc-950 data-[state=active]:shadow-[0_4px_20px_rgba(212,175,55,0.35)] text-zinc-400 hover:text-zinc-100"
+          >
             Table Occupancy
           </TabsTrigger>
-          <TabsTrigger value="charts" className="data-[state=active]:bg-amber-600 data-[state=active]:text-zinc-950 font-bold text-xs">
+          <TabsTrigger
+            value="charts"
+            className="flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-extrabold tracking-wide transition-all duration-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#D4AF37] data-[state=active]:via-[#F1C85C] data-[state=active]:to-[#B68A25] data-[state=active]:text-zinc-950 data-[state=active]:shadow-[0_4px_20px_rgba(212,175,55,0.35)] text-zinc-400 hover:text-zinc-100"
+          >
             Sales Charts
           </TabsTrigger>
         </TabsList>
 
         {/* SECTION 2: ORDERS TAB */}
         <TabsContent value="orders" className="space-y-4">
-          <Card className="border-zinc-800 bg-zinc-900/80">
-            <CardHeader className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800">
+          <Card className="border border-white/10 bg-zinc-900/80 backdrop-blur-xl rounded-3xl p-6 shadow-xl">
+            <CardHeader className="p-0 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800">
               <div>
-                <CardTitle className="text-base font-bold text-zinc-100">Live Orders Directory</CardTitle>
-                <CardDescription className="text-xs text-zinc-400">
+                <CardTitle className="text-lg font-black text-amber-400">Live Orders Directory</CardTitle>
+                <CardDescription className="text-xs text-zinc-400 mt-1">
                   Click any row for detailed item breakdown and manual status overrides.
                 </CardDescription>
               </div>
@@ -374,10 +454,10 @@ export default function ManagerPage() {
                   <Badge
                     key={st}
                     onClick={() => setOrderFilter(st)}
-                    className={`cursor-pointer px-3 py-1 capitalize text-xs ${
+                    className={`cursor-pointer px-3.5 py-1.5 capitalize text-xs font-bold rounded-xl transition-all ${
                       orderFilter === st
-                        ? 'bg-amber-500 text-zinc-950 font-bold'
-                        : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                        ? 'bg-gradient-to-r from-[#D4AF37] via-[#F1C85C] to-[#B68A25] text-zinc-950 shadow-md'
+                        : 'bg-zinc-950 border border-white/10 text-zinc-400 hover:text-zinc-100'
                     }`}
                   >
                     {st}
@@ -386,7 +466,7 @@ export default function ManagerPage() {
               </div>
             </CardHeader>
 
-            <CardContent className="p-0 overflow-x-auto">
+            <CardContent className="p-0 pt-4 overflow-x-auto">
               <Table>
                 <TableHeader className="bg-zinc-950/60">
                   <TableRow className="border-zinc-800">
@@ -409,31 +489,31 @@ export default function ManagerPage() {
                     filteredOrdersTable.map((order) => (
                       <TableRow
                         key={order.id}
-                        className="hover:bg-zinc-800/40 cursor-pointer border-zinc-800/60"
+                        className="hover:bg-zinc-800/40 cursor-pointer border-zinc-800/60 transition-colors"
                         onClick={() => setSelectedOrder(order)}
                       >
                         <TableCell className="font-mono font-bold text-xs text-zinc-100">
-                          #{order.id.slice(0, 8)}
+                          #{order.id.slice(0, 10)}
                         </TableCell>
                         <TableCell>
                           <Badge
-                            className={`capitalize text-[10px] ${
-                              order.status === 'completed'
+                            className={`capitalize text-[10px] font-bold px-2.5 py-0.5 border ${
+                              order.status === 'completed' || order.status === 'delivered'
                                 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
                                 : order.status === 'ready'
                                 ? 'bg-sky-500/20 text-sky-300 border-sky-500/40'
                                 : order.status === 'preparing'
                                 ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                                : 'bg-zinc-800 text-zinc-300'
+                                : 'bg-zinc-800 text-zinc-300 border-zinc-700'
                             }`}
                           >
                             {order.status}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-xs text-zinc-300">
-                          {(order as any).table_number ? `Table ${(order as any).table_number}` : 'Walk-in'}
+                          {(order as any).table_number || (order as any).tableNumber ? `Table ${(order as any).table_number || (order as any).tableNumber}` : order.customer_id || 'Dine-in Guest'}
                         </TableCell>
-                        <TableCell className="text-xs font-bold text-amber-400">
+                        <TableCell className="text-xs font-bold text-amber-400 font-mono">
                           {formatINR(order.total_amount)}
                         </TableCell>
                         <TableCell className="text-xs text-zinc-400">
@@ -447,7 +527,7 @@ export default function ManagerPage() {
                               e.stopPropagation()
                               setSelectedOrder(order)
                             }}
-                            className="h-7 text-xs text-amber-400 hover:bg-amber-500/10"
+                            className="h-7 text-xs text-amber-400 hover:bg-amber-500/10 font-bold"
                           >
                             <Eye className="h-3.5 w-3.5 mr-1" />
                             View
@@ -464,14 +544,14 @@ export default function ManagerPage() {
 
         {/* SECTION 3: RESERVATIONS TAB */}
         <TabsContent value="reservations" className="space-y-4">
-          <Card className="border-zinc-800 bg-zinc-900/80">
-            <CardHeader className="p-4 border-b border-zinc-800">
-              <CardTitle className="text-base font-bold text-zinc-100 flex items-center gap-2">
+          <Card className="border border-white/10 bg-zinc-900/80 backdrop-blur-xl rounded-3xl p-6 shadow-xl">
+            <CardHeader className="p-0 pb-4 border-b border-zinc-800 flex flex-row items-center justify-between">
+              <CardTitle className="text-lg font-black text-amber-400 flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-amber-400" />
-                Table Reservations Manager ({realtimeReservations.length})
+                Table Reservations Manager ({allMasterReservations.length})
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-0 overflow-x-auto">
+            <CardContent className="p-0 pt-4 overflow-x-auto">
               <Table>
                 <TableHeader className="bg-zinc-950/60">
                   <TableRow className="border-zinc-800">
@@ -484,24 +564,24 @@ export default function ManagerPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody className="divide-y divide-zinc-800/60">
-                  {realtimeReservations.length === 0 ? (
+                  {allMasterReservations.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-8 text-xs text-zinc-400">
                         No active reservations booked yet.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    realtimeReservations.map((res) => (
+                    allMasterReservations.map((res) => (
                       <TableRow key={res.id} className="border-zinc-800/60">
                         <TableCell className="text-xs font-bold text-zinc-100">
-                          {res.reservation_date || 'Today'} • {res.reservation_time}
+                          {res.reservation_date || res.date || 'Today'} • {res.reservation_time || res.time || '07:00 PM'}
                         </TableCell>
                         <TableCell className="text-xs font-semibold text-zinc-200">
-                          {(res as any).name || (res as any).guest_name || 'Valued Guest'}
+                          {(res as any).name || (res as any).guest_name || 'Royal Guest'}
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="text-xs border-amber-500/30 text-amber-300">
-                            {res.party_size} Guests
+                          <Badge variant="outline" className="text-xs border-amber-500/30 text-amber-300 font-bold">
+                            {res.party_size || res.guests_count || 2} Guests
                           </Badge>
                         </TableCell>
                         <TableCell className="text-xs font-mono text-zinc-400">
@@ -509,12 +589,12 @@ export default function ManagerPage() {
                         </TableCell>
                         <TableCell>
                           <Badge
-                            className={`capitalize text-[10px] ${
+                            className={`capitalize text-[10px] font-bold px-2.5 py-0.5 border ${
                               res.status === 'confirmed'
                                 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
                                 : res.status === 'cancelled'
                                 ? 'bg-red-500/20 text-red-400 border-red-500/40'
-                                : 'bg-zinc-800 text-zinc-400'
+                                : 'bg-zinc-800 text-zinc-400 border-zinc-700'
                             }`}
                           >
                             {res.status}
