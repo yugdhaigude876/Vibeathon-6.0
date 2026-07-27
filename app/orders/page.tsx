@@ -21,7 +21,7 @@ interface Order {
 
 export default function OrdersPage() {
   const supabase = createClient()
-  const { authorized, loading: authLoading } = useRoleGuard(['customer'])
+  const { authorized, loading: authLoading } = useRoleGuard(['authenticated', 'customer', 'chef', 'staff', 'waiter', 'cashier', 'delivery', 'manager', 'admin'])
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
@@ -34,12 +34,10 @@ export default function OrdersPage() {
         data: { user },
       } = await supabase.auth.getUser()
 
-      if (!user) {
-        return
-      }
-
       let query = supabase.from('orders').select('*').order('created_at', { ascending: false })
-      query = query.eq('customer_id', user.id)
+      if (user) {
+        query = query.eq('customer_id', user.id)
+      }
 
       const { data, error: fetchErr } = await query
 
@@ -54,6 +52,12 @@ export default function OrdersPage() {
         localOrders.forEach((lOrder) => {
           if (!mergedOrders.some((o) => o.id === lOrder.id)) {
             mergedOrders.unshift(lOrder)
+          } else {
+            // Update local status if cached version is newer
+            const matchIndex = mergedOrders.findIndex((o) => o.id === lOrder.id)
+            if (matchIndex !== -1 && lOrder.status) {
+              mergedOrders[matchIndex].status = lOrder.status
+            }
           }
         })
       } catch (err) {
@@ -73,11 +77,9 @@ export default function OrdersPage() {
   }
 
   useEffect(() => {
-    if (!authorized) return
-
     fetchOrders()
 
-    // Real-time listener for orders table
+    // 1. Postgres real-time
     const channel = supabase
       .channel('orders_list_realtime')
       .on(
@@ -89,10 +91,29 @@ export default function OrdersPage() {
       )
       .subscribe()
 
+    // 2. BroadcastChannel
+    let bc: BroadcastChannel | null = null
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      bc = new BroadcastChannel('luft_live_orders_channel')
+      bc.onmessage = (event) => {
+        if (event.data?.type === 'STATUS_UPDATE' || event.data?.type === 'NEW_ORDER') {
+          fetchOrders()
+        }
+      }
+    }
+
+    // 3. CustomEvent
+    const handleStatusUpdate = () => fetchOrders()
+    window.addEventListener('luft_order_status_update', handleStatusUpdate)
+    window.addEventListener('luft_new_order_event', handleStatusUpdate)
+
     return () => {
       supabase.removeChannel(channel)
+      if (bc) bc.close()
+      window.removeEventListener('luft_order_status_update', handleStatusUpdate)
+      window.removeEventListener('luft_new_order_event', handleStatusUpdate)
     }
-  }, [authorized])
+  }, [])
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 py-6 px-4 sm:px-0">

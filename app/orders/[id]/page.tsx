@@ -87,7 +87,7 @@ export default function OrderTrackingPage() {
   const supabase = createClient()
   const { toast } = useToast()
 
-  const { authorized, loading: authLoading } = useRoleGuard(['customer'])
+  const { authorized, loading: authLoading } = useRoleGuard(['authenticated', 'customer', 'chef', 'staff', 'waiter', 'cashier', 'delivery', 'manager', 'admin'])
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
@@ -141,13 +141,13 @@ export default function OrderTrackingPage() {
     }
   }
 
-  // Real-time listener for orders table updates
+  // Real-time listener for orders table & broadcast updates
   useEffect(() => {
-    if (!authorized) return
     fetchOrder()
 
     if (!id) return
 
+    // 1. Supabase Postgres Changes
     const channel = supabase
       .channel(`order_realtime_${id}`)
       .on(
@@ -162,29 +162,74 @@ export default function OrderTrackingPage() {
           const updatedOrder = payload.new as Order
           setOrder((prev) => (prev ? { ...prev, ...updatedOrder } : updatedOrder))
 
-          // Trigger Toast notification when status updates
-          const newStatusFormatted =
-            updatedOrder.status.charAt(0).toUpperCase() + updatedOrder.status.slice(1)
+          const statusUpper = (updatedOrder.status || 'pending').toUpperCase()
           toast({
             title: 'Order Status Updated ✨',
-            description: `Your order is now ${newStatusFormatted}!`,
+            description: `Your order status is now: ${statusUpper}!`,
           })
         }
       )
       .subscribe()
 
+    // 2. BroadcastChannel Listener
+    let bc: BroadcastChannel | null = null
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      bc = new BroadcastChannel('luft_live_orders_channel')
+      bc.onmessage = (event) => {
+        if (event.data?.type === 'STATUS_UPDATE' && event.data.orderId === id) {
+          const newStatus = event.data.status
+          setOrder((prev) => (prev ? { ...prev, status: newStatus } : null))
+          toast({
+            title: 'Order Status Updated ✨',
+            description: `Order is now ${newStatus.toUpperCase()}!`,
+          })
+        }
+      }
+    }
+
+    // 3. CustomEvent Listener
+    const handleCustomStatusUpdate = (e: any) => {
+      if (e.detail?.orderId === id) {
+        const newStatus = e.detail.status
+        setOrder((prev) => (prev ? { ...prev, status: newStatus } : null))
+        toast({
+          title: 'Order Status Updated ✨',
+          description: `Order is now ${newStatus.toUpperCase()}!`,
+        })
+      }
+    }
+    window.addEventListener('luft_order_status_update', handleCustomStatusUpdate)
+
+    // 4. Storage event listener
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'luft_last_status_update' && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue)
+          if (parsed.orderId === id) {
+            setOrder((prev) => (prev ? { ...prev, status: parsed.status } : null))
+          }
+        } catch {}
+      }
+    }
+    window.addEventListener('storage', handleStorageChange)
+
     return () => {
       supabase.removeChannel(channel)
+      if (bc) bc.close()
+      window.removeEventListener('luft_order_status_update', handleCustomStatusUpdate)
+      window.removeEventListener('storage', handleStorageChange)
     }
-  }, [authorized, id])
+  }, [id])
 
   // Compute current step index
   const currentStepIndex = useMemo(() => {
     if (!order) return 0
-    const status = order.status?.toLowerCase() || 'pending'
+    const status = (order.status || 'pending').toLowerCase()
     if (status === 'cancelled') return -1
-    const idx = ORDER_STEPS.findIndex((s) => s.key === status)
-    return idx >= 0 ? idx : 0
+    if (status === 'completed' || status === 'delivered' || status === 'served') return 3
+    if (status === 'ready') return 2
+    if (status === 'preparing') return 1
+    return 0
   }, [order])
 
   // Calculation helpers

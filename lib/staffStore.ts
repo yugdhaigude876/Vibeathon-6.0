@@ -223,9 +223,46 @@ export const useStaffStore = create<StaffStoreState>((set) => ({
 
   orders: INITIAL_ORDERS,
   updateOrderStatus: (orderId: string, status: OrderWorkflowStatus) =>
-    set((state: StaffStoreState) => ({
-      orders: state.orders.map((ord: EnterpriseOrder) => (ord.id === orderId ? { ...ord, status } : ord)),
-    })),
+    set((state: StaffStoreState) => {
+      const updatedOrders = state.orders.map((ord: EnterpriseOrder) =>
+        ord.id === orderId ? { ...ord, status } : ord
+      )
+
+      if (typeof window !== 'undefined') {
+        try {
+          // 1. Sync to local user orders cache
+          const localOrders = JSON.parse(localStorage.getItem('platr_user_orders') || '[]')
+          const updatedLocal = localOrders.map((o: any) =>
+            o.id === orderId ? { ...o, status } : o
+          )
+          localStorage.setItem('platr_user_orders', JSON.stringify(updatedLocal))
+
+          // 2. Broadcast status update across tabs
+          if ('BroadcastChannel' in window) {
+            const bc = new BroadcastChannel('luft_live_orders_channel')
+            bc.postMessage({ type: 'STATUS_UPDATE', orderId, status })
+            bc.close()
+          }
+
+          // 3. Dispatch local event
+          window.dispatchEvent(
+            new CustomEvent('luft_order_status_update', {
+              detail: { orderId, status, timestamp: Date.now() },
+            })
+          )
+
+          // 4. Update storage event trigger
+          localStorage.setItem(
+            'luft_last_status_update',
+            JSON.stringify({ orderId, status, broadcastTimestamp: Date.now() })
+          )
+        } catch (err) {
+          console.warn('Live order status sync warning:', err)
+        }
+      }
+
+      return { orders: updatedOrders }
+    }),
   rejectOrder: (orderId: string, reason = 'Kitchen capacity full') =>
     set((state: StaffStoreState) => ({
       orders: state.orders.map((ord: EnterpriseOrder) =>
