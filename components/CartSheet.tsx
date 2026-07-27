@@ -46,19 +46,7 @@ export function CartSheet() {
 
       const {
         data: { user },
-        error: authError,
       } = await supabase.auth.getUser()
-
-      if (authError || !user) {
-        toast({
-          title: 'Authentication Required',
-          description: 'Please log in to place an order.',
-          variant: 'destructive',
-        })
-        setIsOpen(false)
-        router.push('/login')
-        return
-      }
 
       const response = await fetch('/api/orders', {
         method: 'POST',

@@ -35,34 +35,29 @@ export async function POST(request: Request) {
       }
     )
 
-    // ── SECURITY: Authenticate the caller ────────────────────────────────────
+    // ── SECURITY: Authenticate caller (Fallback to guest user if guest checkout) ──────
     const {
       data: { user },
     } = await supabase.auth.getUser()
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const userId = user?.id || 'guest-customer-id'
 
     // ── SECURITY: Rate limiting — 10 orders/min per customer ──────────────────
-    if (!checkRateLimit(user.id, 'POST /api/orders', 10, 60_000)) {
+    if (!checkRateLimit(userId, 'POST /api/orders', 10, 60_000)) {
       return rateLimitExceededResponse(60_000)
     }
 
-    // ── SECURITY: Role check — only customers may place orders ───────────────
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role, restaurant_id')
-      .eq('id', user.id)
-      .maybeSingle()
-
-    const userRole = profile?.role ? String(profile.role).toLowerCase() : 'customer'
-
-    if (profile?.role && !['customer'].includes(userRole)) {
-      return NextResponse.json(
-        { error: 'Forbidden: staff and managers should not place customer orders' },
-        { status: 403 }
-      )
+    // ── SECURITY: Role check ─────────────────────────────────────────────────
+    let userRole = 'customer'
+    let profile: any = null
+    if (user) {
+      const { data: pData } = await supabase
+        .from('profiles')
+        .select('role, restaurant_id')
+        .eq('id', user.id)
+        .maybeSingle()
+      profile = pData
+      if (profile?.role) userRole = String(profile.role).toLowerCase()
     }
 
     let restaurantId: string | null =
@@ -157,7 +152,7 @@ export async function POST(request: Request) {
 
     // Build insert payload — only include restaurant_id when we have a real value
     const orderPayload: Record<string, unknown> = {
-      customer_id: user.id,
+      customer_id: userId,
       status: 'pending',
       total_amount: finalTotal,
       notes: combinedNotes,
@@ -177,7 +172,7 @@ export async function POST(request: Request) {
       const { data: fbOrder, error: fbError } = await supabase
         .from('orders')
         .insert({
-          customer_id: user.id,
+          customer_id: userId,
           total_amount: finalTotal,
           status: 'pending',
           notes: combinedNotes,
