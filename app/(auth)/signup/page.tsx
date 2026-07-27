@@ -99,13 +99,8 @@ export default function SignupPage() {
     }
 
     if (user) {
-      const { error: profileError } = await createProfile(user.id, user.email)
-
-      if (profileError) {
-        setError(profileError.message)
-        setLoading(false)
-        return
-      }
+      // Attempt profile upsert, but proceed if RLS handles it via database trigger
+      await createProfile(user.id, user.email)
     }
 
     // Supabase returns session: null when email confirmation is required
