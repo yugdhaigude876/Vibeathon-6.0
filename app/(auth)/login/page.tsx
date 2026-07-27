@@ -355,10 +355,11 @@ export default function LoginPage() {
                     {loading ? 'Authenticating...' : 'Sign In to Portal'}
                   </Button>
 
-                  <div className="rounded-xl border border-zinc-800/80 bg-zinc-950/50 p-3 text-center">
-                    <p className="text-[11px] text-zinc-400 leading-relaxed">
-                      Protected portal for authorized restaurant staff & management.
-                    </p>
+                  <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-left space-y-1">
+                    <p className="text-[11px] font-bold text-amber-400 uppercase tracking-wider">Demo Quick Access Credentials:</p>
+                    <p className="text-[11px] text-zinc-300 font-mono">• Manager: <span className="text-amber-300 font-bold">manager@platr.com</span></p>
+                    <p className="text-[11px] text-zinc-300 font-mono">• Staff: <span className="text-amber-300 font-bold">staff@platr.com</span></p>
+                    <p className="text-[10px] text-zinc-500 italic mt-1">(Any password will authenticate for demo access)</p>
                   </div>
                 </form>
               </TabsContent>
