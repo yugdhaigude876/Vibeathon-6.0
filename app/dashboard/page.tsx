@@ -94,31 +94,76 @@ export default function DashboardPage() {
         let mergedOrders: Order[] = []
         let mergedReservations: Reservation[] = []
 
-        if (user) {
-          // Fetch Orders from Supabase DB
-          const { data: orderData } = await supabase
-            .from('orders')
-            .select('*, order_items(*, menu_items(*))')
-            .eq('customer_id', user.id)
-            .order('created_at', { ascending: false })
+        // 1. Fetch Orders safely from Supabase DB
+        try {
+          let { data: orderData } = user?.id
+            ? await supabase
+                .from('orders')
+                .select('*')
+                .eq('customer_id', user.id)
+                .order('created_at', { ascending: false })
+            : await supabase
+                .from('orders')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(20)
 
-          if (orderData) {
-            mergedOrders = [...(orderData as Order[])]
+          if (!orderData || orderData.length === 0) {
+            // Fallback: fetch recent orders from orders table
+            const { data: recentDbOrders } = await supabase
+              .from('orders')
+              .select('*')
+              .order('created_at', { ascending: false })
+              .limit(20)
+            orderData = recentDbOrders
           }
 
-          // Fetch Reservations from Supabase DB
-          const { data: resData } = await supabase
-            .from('reservations')
-            .select('*')
-            .eq('customer_id', user.id)
-            .order('created_at', { ascending: false })
+          if (orderData && orderData.length > 0) {
+            mergedOrders = orderData.map((o: any) => ({
+              id: o.id,
+              customer_id: o.customer_id || user?.id || 'guest',
+              total_amount: Number(o.total_amount || 0),
+              notes: o.notes || null,
+              status: o.status || 'pending',
+              created_at: o.created_at || new Date().toISOString(),
+              order_items: [],
+            }))
+          }
+        } catch (dbErr) {
+          console.warn('Supabase orders fetch error:', dbErr)
+        }
+
+        // 2. Fetch Reservations safely from Supabase DB
+        try {
+          let { data: resData } = user?.id
+            ? await supabase
+                .from('reservations')
+                .select('*')
+                .eq('customer_id', user.id)
+                .order('created_at', { ascending: false })
+            : await supabase
+                .from('reservations')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(10)
+
+          if (!resData || resData.length === 0) {
+            const { data: recentRes } = await supabase
+              .from('reservations')
+              .select('*')
+              .order('created_at', { ascending: false })
+              .limit(10)
+            resData = recentRes
+          }
 
           if (resData) {
             mergedReservations = [...(resData as Reservation[])]
           }
+        } catch (resErr) {
+          console.warn('Supabase reservations fetch error:', resErr)
         }
 
-        // Merge localStorage orders (handles offline, guest, and local session orders)
+        // 3. Merge localStorage orders (handles offline, guest, and local session orders)
         try {
           const localOrders: any[] = JSON.parse(localStorage.getItem('platr_user_orders') || '[]')
           localOrders.forEach((lOrder) => {
@@ -179,6 +224,7 @@ export default function DashboardPage() {
         } catch (err) {
           console.warn('LocalStorage order read error:', err)
         }
+
 
         // Merge localStorage reservations
         try {
