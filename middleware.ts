@@ -138,13 +138,7 @@ export async function middleware(req: NextRequest) {
   }
 
   if (isCustomerOnlyRoute(pathname)) {
-    if (role !== 'customer') {
-      const redirectUrl = req.nextUrl.clone()
-      redirectUrl.pathname = '/dashboard'
-      redirectUrl.searchParams.set('unauthorized', '1')
-      return NextResponse.redirect(redirectUrl)
-    }
-
+    // Staff, managers, admins, and customers can all access menu and customer pages
     return response
   }
 
