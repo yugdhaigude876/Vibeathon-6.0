@@ -6,6 +6,7 @@ import { ShoppingBag, Plus, Minus, Trash2, ArrowRight, Loader2, Utensils } from 
 import { createClient } from '@/lib/supabase'
 import { useCart } from '@/context/CartContext'
 import { useToast } from '@/hooks/use-toast'
+import { notifyStaffOfNewOrder } from '@/lib/orderBroadcaster'
 import {
   Sheet,
   SheetContent,
@@ -67,6 +68,43 @@ export function CartSheet() {
 
       if (!response.ok || result.error) {
         throw new Error(result.error || 'Failed to place order.')
+      }
+
+      // Save order to localStorage for resilient user dashboard updates
+      try {
+        const localOrders = JSON.parse(localStorage.getItem('platr_user_orders') || '[]')
+        const newOrderRecord = {
+          id: result.orderId,
+          total_amount: totalAmount,
+          status: 'pending',
+          notes: notes.trim() || null,
+          created_at: new Date().toISOString(),
+          items: cartItems.map((ci) => ({
+            id: ci.item.id,
+            name: ci.item.name,
+            quantity: ci.quantity,
+            price: ci.item.price,
+          })),
+        }
+        localOrders.unshift(newOrderRecord)
+        localStorage.setItem('platr_user_orders', JSON.stringify(localOrders.slice(0, 20)))
+
+        // Broadcast live to staff dashboard & customer dashboard
+        notifyStaffOfNewOrder({
+          id: result.orderId,
+          displayId: `#ORD-${result.orderId.slice(0, 4).toUpperCase()}`,
+          customerName: 'Customer (Cart Sheet)',
+          totalAmount,
+          notes: notes.trim() || '',
+          items: cartItems.map((ci) => ({
+            id: ci.item.id,
+            name: ci.item.name,
+            quantity: ci.quantity,
+            price: ci.item.price,
+          })),
+        })
+      } catch (err) {
+        console.warn('LocalStorage order save failed:', err)
       }
 
       toast({

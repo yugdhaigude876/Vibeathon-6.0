@@ -89,40 +89,98 @@ export default function DashboardPage() {
           data: { user },
         } = await supabase.auth.getUser()
 
-        if (!user) return
-        setUserEmail(user.email || 'Valued Guest')
+        setUserEmail(user?.email || 'Valued Guest')
 
-        // Fetch Orders
-        const { data: orderData } = await supabase
-          .from('orders')
-          .select('*, order_items(*, menu_items(*))')
-          .eq('customer_id', user.id)
-          .order('created_at', { ascending: false })
+        let mergedOrders: Order[] = []
+        let mergedReservations: Reservation[] = []
 
-        let mergedOrders: Order[] = orderData ? [...(orderData as Order[])] : []
+        if (user) {
+          // Fetch Orders from Supabase DB
+          const { data: orderData } = await supabase
+            .from('orders')
+            .select('*, order_items(*, menu_items(*))')
+            .eq('customer_id', user.id)
+            .order('created_at', { ascending: false })
 
-        // Merge localStorage orders (handles Supabase FK failures)
+          if (orderData) {
+            mergedOrders = [...(orderData as Order[])]
+          }
+
+          // Fetch Reservations from Supabase DB
+          const { data: resData } = await supabase
+            .from('reservations')
+            .select('*')
+            .eq('customer_id', user.id)
+            .order('created_at', { ascending: false })
+
+          if (resData) {
+            mergedReservations = [...(resData as Reservation[])]
+          }
+        }
+
+        // Merge localStorage orders (handles offline, guest, and local session orders)
         try {
-          const localOrders: Order[] = JSON.parse(localStorage.getItem('platr_user_orders') || '[]')
+          const localOrders: any[] = JSON.parse(localStorage.getItem('platr_user_orders') || '[]')
           localOrders.forEach((lOrder) => {
-            if (!mergedOrders.some((o) => o.id === lOrder.id)) {
-              mergedOrders.unshift(lOrder)
+            const formatted: Order = {
+              id: lOrder.id || `ord-${Date.now()}`,
+              customer_id: user?.id || 'guest',
+              total_amount: Number(lOrder.total_amount || lOrder.totalAmount || 0),
+              notes: lOrder.notes || lOrder.specialInstructions || null,
+              status: lOrder.status || 'pending',
+              created_at: lOrder.created_at || lOrder.createdAt || new Date().toISOString(),
+              order_items: lOrder.items
+                ? lOrder.items.map((i: any) => ({
+                    id: i.id || `item-${Math.random()}`,
+                    menu_item_id: i.id,
+                    quantity: i.quantity || 1,
+                    unit_price: i.price || 0,
+                    menu_items: {
+                      name: i.name || 'Delicious Dish',
+                      category: 'Main',
+                      price: i.price || 0,
+                      is_available: true,
+                    },
+                  }))
+                : [],
+            }
+            if (!mergedOrders.some((o) => o.id === formatted.id)) {
+              mergedOrders.unshift(formatted)
             }
           })
-        } catch {}
 
-        setOrders(mergedOrders)
+          // Also check single last order broadcast
+          const lastOrderStr = localStorage.getItem('luft_last_new_order')
+          if (lastOrderStr) {
+            const lastOrd = JSON.parse(lastOrderStr)
+            if (lastOrd && lastOrd.id && !mergedOrders.some((o) => o.id === lastOrd.id)) {
+              mergedOrders.unshift({
+                id: lastOrd.id,
+                customer_id: user?.id || 'guest',
+                total_amount: Number(lastOrd.totalAmount || lastOrd.total_amount || 0),
+                notes: lastOrd.notes || null,
+                status: lastOrd.status || 'pending',
+                created_at: lastOrd.createdAt || lastOrd.created_at || new Date().toISOString(),
+                order_items: (lastOrd.items || []).map((i: any) => ({
+                  id: i.id || `item-${Math.random()}`,
+                  menu_item_id: i.id,
+                  quantity: i.quantity || 1,
+                  unit_price: i.price || 0,
+                  menu_items: {
+                    name: i.name || 'Special Delicacy',
+                    category: 'Main',
+                    price: i.price || 0,
+                    is_available: true,
+                  },
+                })),
+              })
+            }
+          }
+        } catch (err) {
+          console.warn('LocalStorage order read error:', err)
+        }
 
-        // Fetch Reservations
-        const { data: resData } = await supabase
-          .from('reservations')
-          .select('*')
-          .eq('customer_id', user.id)
-          .order('created_at', { ascending: false })
-
-        let mergedReservations: Reservation[] = resData ? [...(resData as Reservation[])] : []
-
-        // Merge localStorage reservations (handles Supabase schema failures)
+        // Merge localStorage reservations
         try {
           const localRes: Reservation[] = JSON.parse(localStorage.getItem('platr_user_reservations') || '[]')
           localRes.forEach((lRes) => {
@@ -132,6 +190,7 @@ export default function DashboardPage() {
           })
         } catch {}
 
+        setOrders(mergedOrders)
         setReservations(mergedReservations)
       } catch (err) {
         console.error('Error loading dashboard data:', err)
@@ -142,51 +201,69 @@ export default function DashboardPage() {
 
     loadDashboardData()
 
-    // Real-time: refetch when a new order lands in Supabase for this user
+    // Setup multi-channel real-time listeners for live order updates
     let realtimeChannel: ReturnType<typeof supabase.channel> | null = null
+    let bc: BroadcastChannel | null = null
 
     async function setupRealtime() {
       const {
         data: { user },
       } = await supabase.auth.getUser()
 
-      if (!user) return
+      if (user) {
+        const channelName = `dashboard_orders_realtime_${user.id}_${Math.random().toString(36).slice(2)}`
+        realtimeChannel = supabase.channel(channelName)
 
-      const channelName = `dashboard_orders_realtime_${user.id}_${Math.random().toString(36).slice(2)}`
-      realtimeChannel = supabase.channel(channelName)
+        realtimeChannel
+          .on(
+            'postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'orders', filter: `customer_id=eq.${user.id}` },
+            () => loadDashboardData()
+          )
+          .on(
+            'postgres_changes',
+            { event: 'UPDATE', schema: 'public', table: 'orders', filter: `customer_id=eq.${user.id}` },
+            () => loadDashboardData()
+          )
 
-      realtimeChannel
-        .on(
-          'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'orders', filter: `customer_id=eq.${user.id}` },
-          () => {
-            loadDashboardData()
-          }
-        )
-        .on(
-          'postgres_changes',
-          { event: 'UPDATE', schema: 'public', table: 'orders', filter: `customer_id=eq.${user.id}` },
-          () => {
-            loadDashboardData()
-          }
-        )
-
-      await realtimeChannel.subscribe()
+        await realtimeChannel.subscribe()
+      }
     }
 
     setupRealtime()
 
-    // Refetch when user returns to this tab (handles localStorage-only orders)
+    // 1. BroadcastChannel listener
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      bc = new BroadcastChannel('luft_live_orders_channel')
+      bc.onmessage = (event) => {
+        if (event.data?.type === 'NEW_ORDER') {
+          loadDashboardData()
+        }
+      }
+    }
+
+    // 2. CustomEvent & Storage listeners
+    const handleNewOrderEvent = () => loadDashboardData()
+    const handleStorageChange = () => loadDashboardData()
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') loadDashboardData()
     }
+
+    window.addEventListener('luft_new_order_event', handleNewOrderEvent)
+    window.addEventListener('storage', handleStorageChange)
+    window.addEventListener('focus', handleVisibility)
     document.addEventListener('visibilitychange', handleVisibility)
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibility)
+      window.removeEventListener('focus', handleVisibility)
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('luft_new_order_event', handleNewOrderEvent)
+      if (bc) bc.close()
       if (realtimeChannel) supabase.removeChannel(realtimeChannel)
     }
   }, [])
+
 
   // Stats Calculations
   const totalOrders = orders.length
