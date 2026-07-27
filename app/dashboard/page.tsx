@@ -225,6 +225,52 @@ export default function DashboardPage() {
           console.warn('LocalStorage order read error:', err)
         }
 
+        // If no orders found, seed default recent customer orders for showcase
+        if (mergedOrders.length === 0) {
+          mergedOrders = [
+            {
+              id: 'ord-101',
+              customer_id: user?.id || 'guest',
+              total_amount: 1450,
+              notes: '[Payment: CARD] | Table: T-04',
+              status: 'preparing',
+              created_at: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
+              order_items: [
+                {
+                  id: 'item-1',
+                  menu_item_id: 'm1',
+                  quantity: 2,
+                  unit_price: 450,
+                  menu_items: { name: 'Truffle Mushroom Dimsum', category: 'Dimsum', price: 450, is_available: true },
+                },
+                {
+                  id: 'item-2',
+                  menu_item_id: 'm2',
+                  quantity: 1,
+                  unit_price: 550,
+                  menu_items: { name: 'Butter Chicken Tacos', category: 'Tapas', price: 550, is_available: true },
+                },
+              ],
+            },
+            {
+              id: 'ord-102',
+              customer_id: user?.id || 'guest',
+              total_amount: 1850,
+              notes: '[Payment: UPI] | Table: T-02',
+              status: 'delivered',
+              created_at: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
+              order_items: [
+                {
+                  id: 'item-3',
+                  menu_item_id: 'm3',
+                  quantity: 1,
+                  unit_price: 1850,
+                  menu_items: { name: 'Royal Saffron Biryani', category: 'Mains', price: 1850, is_available: true },
+                },
+              ],
+            },
+          ]
+        }
 
         // Merge localStorage reservations
         try {
@@ -244,6 +290,7 @@ export default function DashboardPage() {
         setLoading(false)
       }
     }
+
 
     loadDashboardData()
 
