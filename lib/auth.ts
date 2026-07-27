@@ -7,16 +7,10 @@ import type {
 } from '@supabase/supabase-js'
 
 import { createClient } from './supabase'
+import { getRoleRedirectPath, isStaffRole } from './services/roleService'
+import { UserProfile, UserRole } from './types/auth'
 
-export interface Profile {
-  id: string
-  email: string | null
-  full_name: string | null
-  avatar_url: string | null
-  role: string
-  created_at: string
-  updated_at: string
-}
+export interface Profile extends UserProfile {}
 
 export async function signUp(
   email: string,
@@ -75,6 +69,27 @@ export async function getUserProfile(
     .from('profiles')
     .select('*')
     .eq('id', userId)
-    .single()
-  return { profile: data, error }
+    .maybeSingle()
+
+  if (error || !data) {
+    return { profile: null, error }
+  }
+
+  return {
+    profile: {
+      id: data.id,
+      email: data.email,
+      full_name: data.full_name || null,
+      avatar_url: data.avatar_url || null,
+      role: (data.role?.toLowerCase() as UserRole) || 'customer',
+      branch: data.branch || null,
+      department: data.department || null,
+      status: data.status || 'active',
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+    },
+    error: null,
+  }
 }
+
+export { getRoleRedirectPath, isStaffRole }

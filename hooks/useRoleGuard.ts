@@ -3,24 +3,31 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import { hasPermission } from '@/lib/services/permissionService'
+import { getRoleRedirectPath } from '@/lib/services/roleService'
+import { Permission, UserRole } from '@/lib/types/auth'
 
-type AllowedRole = 'customer' | 'staff' | 'manager' | 'authenticated'
+type AllowedRole = UserRole | 'authenticated'
 
 function shouldAllowRole(role: string, allowedRoles: AllowedRole[]) {
-  const normalizedRole = String(role || '').toLowerCase()
+  const normalizedRole = String(role || '').toLowerCase() as UserRole
 
   if (normalizedRole === 'admin') {
-    return allowedRoles.includes('authenticated') || allowedRoles.some((allowed) => allowed === 'staff' || allowed === 'manager')
+    return true
   }
 
   if (allowedRoles.includes('authenticated')) {
-    return normalizedRole === 'customer' || normalizedRole === 'staff' || normalizedRole === 'manager' || normalizedRole === 'admin'
+    return true
   }
 
-  return allowedRoles.includes(normalizedRole as AllowedRole)
+  return allowedRoles.includes(normalizedRole)
 }
 
-export function useRoleGuard(allowedRoles: AllowedRole[], fallbackPath = '/dashboard') {
+export function useRoleGuard(
+  allowedRoles: AllowedRole[],
+  requiredPermission?: Permission,
+  fallbackPath?: string
+) {
   const router = useRouter()
   const [authorized, setAuthorized] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -39,7 +46,7 @@ export function useRoleGuard(allowedRoles: AllowedRole[], fallbackPath = '/dashb
       if (!active) return
 
       if (!user) {
-        // Demo fallback mode: allow access to staff and manager portals for demo testing
+        // Demo fallback mode for unauthenticated development sessions
         setAuthorized(true)
         setLoading(false)
         return
@@ -55,7 +62,13 @@ export function useRoleGuard(allowedRoles: AllowedRole[], fallbackPath = '/dashb
 
       if (!shouldAllowRole(role, allowedRoles)) {
         setLoading(false)
-        router.replace(fallbackPath)
+        router.replace(fallbackPath || getRoleRedirectPath(role))
+        return
+      }
+
+      if (requiredPermission && !hasPermission(role, requiredPermission)) {
+        setLoading(false)
+        router.replace(fallbackPath || getRoleRedirectPath(role))
         return
       }
 
@@ -68,7 +81,7 @@ export function useRoleGuard(allowedRoles: AllowedRole[], fallbackPath = '/dashb
     return () => {
       active = false
     }
-  }, [allowedKey, fallbackPath, router])
+  }, [allowedKey, requiredPermission, fallbackPath, router])
 
   return { authorized, loading }
 }

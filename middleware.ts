@@ -1,42 +1,26 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { getRoleRedirectPath, isManagerOrAdmin, isStaffRole } from '@/lib/services/roleService'
+import { UserRole } from '@/lib/types/auth'
 
-const CUSTOMER_ONLY_ROUTES = ['/menu', '/orders', '/reservations', '/checkout', '/dashboard']
-const AUTHENTICATED_ROUTES: string[] = []
-const STAFF_MANAGER_ROUTES = ['/staff']
-const MANAGER_ONLY_ROUTES = ['/manager']
 const PUBLIC_ROUTES = ['/login', '/signup']
+const MANAGER_ROUTES = ['/manager']
+const STAFF_ROUTES = ['/staff']
+const CUSTOMER_ROUTES = ['/menu', '/orders', '/reservations', '/checkout', '/dashboard']
 
 function isPublicRoute(pathname: string) {
-  return PUBLIC_ROUTES.includes(pathname) || pathname.startsWith('/api/auth') || pathname.startsWith('/api/ai')
-}
-
-function isCustomerOnlyRoute(pathname: string) {
-  return CUSTOMER_ONLY_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))
-}
-
-function isAuthenticatedRoute(pathname: string) {
-  return AUTHENTICATED_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))
-}
-
-function isStaffOrManagerRoute(pathname: string) {
-  return STAFF_MANAGER_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))
-}
-
-function isManagerOnlyRoute(pathname: string) {
-  return MANAGER_ONLY_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))
-}
-
-function getDefaultRedirect(role: string) {
-  if (role === 'staff') return '/staff/kitchen'
-  if (role === 'manager' || role === 'admin') return '/manager'
-  return '/menu'
+  return (
+    PUBLIC_ROUTES.includes(pathname) ||
+    pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/api/ai') ||
+    pathname === '/'
+  )
 }
 
 async function getUserRole(
   supabase: ReturnType<typeof createServerClient>,
   user: { id: string; user_metadata?: Record<string, unknown> } | null
-) {
+): Promise<UserRole> {
   if (!user) return 'customer'
 
   const { data, error } = await supabase
@@ -46,19 +30,88 @@ async function getUserRole(
     .maybeSingle()
 
   if (!error && data?.role) {
-    return String(data.role).toLowerCase()
+    return String(data.role).toLowerCase() as UserRole
   }
 
   const metadataRole = user.user_metadata?.role
   if (typeof metadataRole === 'string' && metadataRole.trim()) {
-    return metadataRole.toLowerCase()
+    return metadataRole.toLowerCase() as UserRole
   }
 
   return 'customer'
 }
 
 export async function middleware(req: NextRequest) {
-  return NextResponse.next()
+  let response = NextResponse.next({
+    request: {
+      headers: req.headers,
+    },
+  })
+
+  const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseUrl = rawUrl && rawUrl.startsWith('http') ? rawUrl : 'https://placeholder.supabase.co'
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
+
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return req.cookies.getAll()
+      },
+      setAll(cookiesToSet: Array<{ name: string; value: string; options?: CookieOptions }>) {
+        cookiesToSet.forEach(({ name, value }) => req.cookies.set(name, value))
+        response = NextResponse.next({
+          request: {
+            headers: req.headers,
+          },
+        })
+        cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
+      },
+    },
+  })
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  const pathname = req.nextUrl.pathname
+  const role = await getUserRole(supabase, user)
+
+  // 1. If logged in and hitting /login or /signup, redirect to default portal
+  if (user && isPublicRoute(pathname) && (pathname === '/login' || pathname === '/signup')) {
+    const redirectUrl = req.nextUrl.clone()
+    redirectUrl.pathname = getRoleRedirectPath(role)
+    redirectUrl.search = ''
+    return NextResponse.redirect(redirectUrl)
+  }
+
+  // Allow public routes
+  if (isPublicRoute(pathname)) {
+    return response
+  }
+
+  // 2. Protect /manager routes: only managers and admins allowed
+  if (MANAGER_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))) {
+    if (user && !isManagerOrAdmin(role)) {
+      const redirectUrl = req.nextUrl.clone()
+      redirectUrl.pathname = '/dashboard'
+      redirectUrl.searchParams.set('unauthorized', '1')
+      return NextResponse.redirect(redirectUrl)
+    }
+    return response
+  }
+
+  // 3. Protect /staff routes: staff, chef, cashier, waiter, delivery, manager, admin allowed
+  if (STAFF_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))) {
+    if (user && !isStaffRole(role)) {
+      const redirectUrl = req.nextUrl.clone()
+      redirectUrl.pathname = '/dashboard'
+      redirectUrl.searchParams.set('unauthorized', '1')
+      return NextResponse.redirect(redirectUrl)
+    }
+    return response
+  }
+
+  return response
 }
 
 export const config = {
