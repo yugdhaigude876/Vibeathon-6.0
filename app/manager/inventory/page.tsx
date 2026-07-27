@@ -317,16 +317,16 @@ export default function ManagerInventoryPage() {
             />
           </div>
 
-          <div className="md:col-span-2 flex items-center gap-2 overflow-x-auto no-scrollbar">
-            <span className="text-xs text-zinc-400 shrink-0 font-medium">Menu Category:</span>
+          <div className="md:col-span-2 flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-950">
+            <span className="text-xs text-zinc-400 shrink-0 font-medium mr-1">Menu Category:</span>
             {categories.map((cat) => (
               <Badge
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
                 className={`cursor-pointer px-3 py-1 text-xs shrink-0 transition-all ${
                   selectedCategory === cat
-                    ? 'bg-amber-500 text-zinc-950 font-bold'
-                    : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                    ? 'bg-amber-500 text-zinc-950 font-bold shadow-md shadow-amber-500/20'
+                    : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900'
                 }`}
               >
                 {cat}
