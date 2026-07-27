@@ -223,15 +223,15 @@ export default function ManagerInventoryPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-              {lowStockAlerts.slice(0, 6).map((item) => (
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-red-800 scrollbar-track-zinc-950">
+              {lowStockAlerts.map((item) => (
                 <div
                   key={item.id}
                   onClick={() => handleOpenEdit(item)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-red-500/30 bg-zinc-900 text-xs cursor-pointer hover:bg-zinc-800"
+                  className="flex shrink-0 items-center justify-between gap-2.5 px-3 py-1.5 rounded-xl border border-red-500/30 bg-zinc-900 text-xs cursor-pointer hover:bg-zinc-800 transition-all shadow-sm"
                 >
-                  <span className="font-semibold text-zinc-100">{item.name}</span>
-                  <Badge className="bg-red-600 text-white text-[10px] px-1.5 py-0 font-bold">
+                  <span className="font-semibold text-zinc-100 whitespace-nowrap text-xs">{item.name}</span>
+                  <Badge className="bg-red-600 text-white text-[10px] px-2 py-0.5 font-extrabold shrink-0">
                     {item.stock_level} units
                   </Badge>
                 </div>
