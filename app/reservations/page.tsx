@@ -359,22 +359,24 @@ export default function ReservationsPage() {
 
       {/* Luxury Tabs Navigation */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 bg-zinc-950/80 border border-white/10 p-2 rounded-3xl backdrop-blur-xl shadow-xl">
-          <TabsTrigger
-            value="book"
-            className="flex items-center justify-center gap-2 py-3 rounded-2xl text-xs sm:text-sm font-bold tracking-wide transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#D4AF37] data-[state=active]:via-[#F1C85C] data-[state=active]:to-[#B68A25] data-[state=active]:text-zinc-950 data-[state=active]:shadow-[0_8px_25px_rgba(212,175,55,0.3)] text-zinc-300 hover:text-zinc-100"
-          >
-            <CalendarCheck className="h-4 w-4" />
-            Book a Table
-          </TabsTrigger>
-          <TabsTrigger
-            value="history"
-            className="flex items-center justify-center gap-2 py-3 rounded-2xl text-xs sm:text-sm font-bold tracking-wide transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#D4AF37] data-[state=active]:via-[#F1C85C] data-[state=active]:to-[#B68A25] data-[state=active]:text-zinc-950 data-[state=active]:shadow-[0_8px_25px_rgba(212,175,55,0.3)] text-zinc-300 hover:text-zinc-100"
-          >
-            <Crown className="h-4 w-4" />
-            My Reservations ({reservations.length})
-          </TabsTrigger>
-        </TabsList>
+        <div className="flex justify-center w-full">
+          <TabsList className="grid w-full max-w-xl grid-cols-2 bg-zinc-950/90 border border-white/10 p-1.5 rounded-2xl backdrop-blur-xl shadow-2xl h-auto">
+            <TabsTrigger
+              value="book"
+              className="flex items-center justify-center gap-2 py-3 rounded-xl text-xs sm:text-sm font-bold tracking-wide transition-all duration-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#D4AF37] data-[state=active]:via-[#F1C85C] data-[state=active]:to-[#B68A25] data-[state=active]:text-zinc-950 data-[state=active]:shadow-[0_4px_20px_rgba(212,175,55,0.35)] text-zinc-400 hover:text-zinc-100"
+            >
+              <CalendarCheck className="h-4 w-4" />
+              <span>Book a Table</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="history"
+              className="flex items-center justify-center gap-2 py-3 rounded-xl text-xs sm:text-sm font-bold tracking-wide transition-all duration-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#D4AF37] data-[state=active]:via-[#F1C85C] data-[state=active]:to-[#B68A25] data-[state=active]:text-zinc-950 data-[state=active]:shadow-[0_4px_20px_rgba(212,175,55,0.35)] text-zinc-400 hover:text-zinc-100"
+            >
+              <Crown className="h-4 w-4" />
+              <span>My Reservations ({reservations.length})</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* Tab 1: Book a Table Form */}
         <TabsContent value="book" className="mt-8">
