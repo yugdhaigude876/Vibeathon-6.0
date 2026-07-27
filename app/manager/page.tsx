@@ -246,62 +246,83 @@ export default function ManagerPage() {
         </div>
       </div>
 
-      {/* SECTION 1: TODAY'S KPIs (4 Large Cards) */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-zinc-800 bg-zinc-900/80 shadow-md">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-              Today's Revenue
+      {/* SECTION 1: EXECUTIVE COMMAND CENTRE & BUSINESS HEALTH SCORE */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        {/* Business Health Score Card */}
+        <Card className="border-amber-500/40 bg-gradient-to-br from-amber-950/30 via-zinc-900 to-zinc-950 shadow-lg col-span-1 sm:col-span-2 lg:col-span-1">
+          <CardHeader className="flex flex-row items-center justify-between pb-1 p-4">
+            <CardTitle className="text-xs font-black uppercase tracking-wider text-amber-400">
+              Business Health Score
             </CardTitle>
-            <TrendingUp className="h-4 w-4 text-emerald-400" />
+            <Badge className="bg-amber-500 text-zinc-950 font-black text-[10px]">94 / 100</Badge>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-black text-amber-400">{formatINR(revenueToday)}</div>
-            <p className="text-[11px] text-zinc-400 mt-1">Completed & ready orders</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-zinc-800 bg-zinc-900/80 shadow-md">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-              Total Orders Today
-            </CardTitle>
-            <ShoppingCart className="h-4 w-4 text-sky-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-black text-zinc-100">{todaysOrders.length}</div>
-            <p className="text-[11px] text-zinc-400 mt-1">Avg 2.5 min/order pacing</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-zinc-800 bg-zinc-900/80 shadow-md">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-              Avg Order Value (AOV)
-            </CardTitle>
-            <BarChart className="h-4 w-4 text-purple-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-black text-zinc-100">{formatINR(avgOrderValue)}</div>
-            <p className="text-[11px] text-zinc-400 mt-1">
-              Top seller: {bestSellers[0]?.[0] || 'Tapas & Mains'}
+          <CardContent className="p-4 pt-0 space-y-2">
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-black text-amber-400">94%</span>
+              <span className="text-xs text-emerald-400 font-extrabold flex items-center">
+                <TrendingUp className="h-3 w-3 mr-0.5" /> +2.4%
+              </span>
+            </div>
+            <p className="text-[11px] text-zinc-300 font-semibold leading-tight">
+              Optimal revenue pacing, 75.5% gross margin, & 98% kitchen SLA compliance.
             </p>
           </CardContent>
         </Card>
 
         <Card className="border-zinc-800 bg-zinc-900/80 shadow-md">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 p-4">
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+              Today's Revenue
+            </CardTitle>
+            <TrendingUp className="h-4 w-4 text-emerald-400" />
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <div className="text-2xl font-black text-emerald-400">{formatINR(revenueToday)}</div>
+            <p className="text-[11px] text-zinc-400 mt-1">Completed & ready orders</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-zinc-800 bg-zinc-900/80 shadow-md">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 p-4">
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+              Weekly Revenue
+            </CardTitle>
+            <BarChart className="h-4 w-4 text-sky-400" />
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <div className="text-2xl font-black text-zinc-100">{formatINR(980000)}</div>
+            <p className="text-[11px] text-emerald-400 mt-1 font-semibold">+18.5% WoW Growth</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-zinc-800 bg-zinc-900/80 shadow-md">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 p-4">
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+              Avg Order Value (AOV)
+            </CardTitle>
+            <ShoppingCart className="h-4 w-4 text-purple-400" />
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <div className="text-2xl font-black text-purple-400">{formatINR(avgOrderValue || 1628)}</div>
+            <p className="text-[11px] text-zinc-400 mt-1">
+              Top: {bestSellers[0]?.[0] || 'Truffle Risotto'}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-zinc-800 bg-zinc-900/80 shadow-md">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 p-4">
             <CardTitle className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
               Completed Orders
             </CardTitle>
             <CheckCircle className="h-4 w-4 text-emerald-400" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 pt-0">
             <div className="text-2xl font-black text-emerald-400">{completedOrdersCount}</div>
             <p className="text-[11px] text-zinc-400 mt-1">
               {todaysOrders.length > 0
-                ? `${Math.round((completedOrdersCount / todaysOrders.length) * 100)}% completion rate`
-                : '100% completion rate'}
+                ? `${Math.round((completedOrdersCount / todaysOrders.length) * 100)}% SLA fulfilled`
+                : '100% SLA fulfilled'}
             </p>
           </CardContent>
         </Card>

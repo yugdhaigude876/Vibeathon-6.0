@@ -18,6 +18,8 @@ import {
   Activity,
   FileText,
   LogOut,
+  Landmark,
+  History,
 } from 'lucide-react'
 import { useManagerStore } from '@/lib/managerStore'
 import { Badge } from '@/components/ui/badge'
@@ -29,8 +31,10 @@ const MANAGER_NAV = [
   { label: 'Live Operations', href: '/manager/monitoring', icon: Activity },
   { label: 'User & Staff RBAC', href: '/manager/users', icon: Users },
   { label: 'Menu & Inventory ERP', href: '/manager/inventory', icon: Package },
+  { label: 'Financial ERP', href: '/manager/finance', icon: Landmark },
   { label: 'Marketing & Loyalty', href: '/manager/marketing', icon: Megaphone },
   { label: 'AI Business Intelligence', href: '/manager/ai-insights', icon: Sparkles },
+  { label: 'Audit Timeline', href: '/manager/audit', icon: History },
   { label: 'Reports & Exports', href: '/manager/reports', icon: FileText },
 ]
 
