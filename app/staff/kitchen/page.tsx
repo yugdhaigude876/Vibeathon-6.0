@@ -83,6 +83,7 @@ export default function KitchenPage() {
 
   const {
     orders,
+    addOrder,
     tables,
     requests,
     inventoryAlerts,
@@ -98,6 +99,64 @@ export default function KitchenPage() {
     updateRequestStatus,
     toggleStockStatus,
   } = useStaffStore()
+
+  // Real-time live customer order connection listener
+  useEffect(() => {
+    const handleNewOrder = (orderData: any) => {
+      if (!orderData || !orderData.id) return
+      addOrder(orderData)
+
+      // Play audio chime alert if sound enabled
+      if (soundEnabled) {
+        try {
+          const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)()
+          const osc = audioCtx.createOscillator()
+          const gain = audioCtx.createGain()
+          osc.type = 'sine'
+          osc.frequency.setValueAtTime(659.25, audioCtx.currentTime) // E5 note chime
+          gain.gain.setValueAtTime(0.2, audioCtx.currentTime)
+          osc.connect(gain)
+          gain.connect(audioCtx.destination)
+          osc.start()
+          osc.stop(audioCtx.currentTime + 0.35)
+        } catch (err) {
+          // Audio fallback
+        }
+      }
+    }
+
+    // 1. BroadcastChannel listener
+    let bc: BroadcastChannel | null = null
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      bc = new BroadcastChannel('luft_live_orders_channel')
+      bc.onmessage = (event) => {
+        if (event.data?.type === 'NEW_ORDER') {
+          handleNewOrder(event.data.order)
+        }
+      }
+    }
+
+    // 2. CustomEvent listener
+    const eventHandler = (e: any) => handleNewOrder(e.detail)
+    window.addEventListener('luft_new_order_event', eventHandler)
+
+    // 3. Storage event listener
+    const storageHandler = (e: StorageEvent) => {
+      if (e.key === 'luft_last_new_order' && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue)
+          handleNewOrder(parsed)
+        } catch {}
+      }
+    }
+    window.addEventListener('storage', storageHandler)
+
+    return () => {
+      if (bc) bc.close()
+      window.removeEventListener('luft_new_order_event', eventHandler)
+      window.removeEventListener('storage', storageHandler)
+    }
+  }, [addOrder, soundEnabled])
 
   // Table Management States
   const [selectedTableId, setSelectedTableId] = useState<string>('t1')

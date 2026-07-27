@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
 import { useToast } from '@/hooks/use-toast'
+import { notifyStaffOfNewOrder } from '@/lib/orderBroadcaster'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -135,6 +136,22 @@ export default function CheckoutPage() {
       } catch (err) {
         console.warn('LocalStorage order save failed:', err)
       }
+
+      // Broadcast order live to Staff Dashboard
+      notifyStaffOfNewOrder({
+        id: data.orderId,
+        displayId: `#ORD-${data.orderId.slice(0, 4).toUpperCase()}`,
+        customerName: 'Customer (Online Order)',
+        tableNumber: tableNumber.trim() || 'Takeaway',
+        totalAmount,
+        notes,
+        items: cartItems.map((c) => ({
+          id: c.item.id,
+          name: c.item.name,
+          quantity: c.quantity,
+          price: c.item.price,
+        })),
+      })
 
       toast({
         title: paymentMethod === 'card' ? 'Payment Approved & Order Placed! 🎉' : 'Order Confirmed (Pay on Delivery)! 🍽️',
