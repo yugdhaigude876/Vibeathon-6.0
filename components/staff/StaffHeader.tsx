@@ -16,7 +16,7 @@ import {
   AlertTriangle,
   Sparkles,
   X,
-  Crown,
+  User,
 } from 'lucide-react'
 import { useStaffStore } from '@/lib/staffStore'
 import { StaffRole, StaffNotification } from '@/lib/staffTypes'
@@ -26,7 +26,7 @@ import { Button } from '@/components/ui/button'
 const ROLE_NAVIGATION: { role: StaffRole; label: string; href: string; icon: React.ElementType }[] = [
   { role: 'chef', label: 'Dashboard', href: '/staff/dashboard', icon: LayoutDashboard },
   { role: 'chef', label: 'Kitchen KDS', href: '/staff/kitchen', icon: ChefHat },
-  { role: 'cashier', label: 'Cashier & POS', href: '/staff/cashier', icon: Receipt },
+  { role: 'cashier', label: 'Cashier POS', href: '/staff/cashier', icon: Receipt },
   { role: 'waiter', label: 'Waiter Tables', href: '/staff/waiter', icon: UtensilsCrossed },
   { role: 'delivery', label: 'Delivery Dispatch', href: '/staff/delivery', icon: Truck },
 ]
@@ -63,13 +63,16 @@ export function StaffHeader() {
 
   const unreadCount = notifications.filter((n: StaffNotification) => !n.read).length
 
+  // Clean name without extra parenthesis clutter
+  const cleanName = profile.name.replace(/^(Rider|Chef|Waiter|Cashier)\s+/i, '').replace(/\(.*\)/, '').trim() || profile.name
+
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-zinc-950/80 backdrop-blur-xl shadow-2xl">
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-zinc-950/90 backdrop-blur-2xl shadow-2xl">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6">
-        {/* Brand & Branch Badge */}
-        <div className="flex items-center gap-4">
-          <Link href="/staff/dashboard" className="flex items-center gap-3 group">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#D4AF37] via-[#F1C85C] to-[#B68A25] text-zinc-950 shadow-[0_4px_20px_rgba(212,175,55,0.3)] transition duration-300 group-hover:scale-105">
+        {/* Clean Brand & Branch Header */}
+        <div className="flex items-center gap-6">
+          <Link href="/staff/dashboard" className="flex items-center gap-3.5 group">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#D4AF37] via-[#F1C85C] to-[#B68A25] text-zinc-950 shadow-[0_4px_20px_rgba(212,175,55,0.35)] transition duration-300 group-hover:scale-105">
               <ChefHat className="h-6 w-6" />
             </div>
             <div>
@@ -81,36 +84,14 @@ export function StaffHeader() {
                   ENTERPRISE
                 </Badge>
               </div>
-              <p className="text-[11px] font-semibold text-zinc-400">
-                {profile.branch} ({profile.name})
+              <p className="text-[11px] font-semibold text-zinc-400 mt-0.5">
+                {profile.branch}
               </p>
             </div>
           </Link>
 
-          {/* Quick Role Switcher */}
-          <div className="hidden lg:flex items-center gap-1 rounded-2xl border border-white/10 bg-white/5 p-1.5 backdrop-blur-md">
-            <span className="text-[10px] font-extrabold uppercase text-amber-300/80 px-2 tracking-wider">
-              Role View:
-            </span>
-            {(['chef', 'cashier', 'waiter', 'delivery'] as StaffRole[]).map((r) => (
-              <button
-                key={r}
-                onClick={() => setRole(r)}
-                className={`rounded-xl px-3 py-1.5 text-xs font-extrabold uppercase transition-all ${
-                  profile.role === r
-                    ? 'bg-gradient-to-r from-[#D4AF37] via-[#F1C85C] to-[#B68A25] text-zinc-950 shadow-[0_4px_15px_rgba(212,175,55,0.25)]'
-                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'
-                }`}
-              >
-                {r}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Navigation & Controls */}
-        <div className="flex items-center gap-3">
-          <nav className="hidden md:flex items-center gap-1.5">
+          {/* Role Navigation Pills */}
+          <nav className="hidden lg:flex items-center gap-1 rounded-2xl border border-white/10 bg-white/5 p-1.5 backdrop-blur-md">
             {ROLE_NAVIGATION.map((nav) => {
               const Icon = nav.icon
               const isActive = pathname === nav.href
@@ -118,26 +99,29 @@ export function StaffHeader() {
                 <Link
                   key={nav.href}
                   href={nav.href}
-                  className={`flex items-center gap-2 rounded-2xl px-3.5 py-2 text-xs font-extrabold tracking-wide transition-all ${
+                  className={`flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-extrabold tracking-wide transition-all ${
                     isActive
-                      ? 'border border-amber-500/40 bg-amber-500/10 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.15)]'
-                      : 'text-zinc-300 hover:bg-white/5 hover:text-zinc-100'
+                      ? 'bg-gradient-to-r from-[#D4AF37] via-[#F1C85C] to-[#B68A25] text-zinc-950 shadow-[0_4px_15px_rgba(212,175,55,0.3)]'
+                      : 'text-zinc-400 hover:text-zinc-100 hover:bg-white/5'
                   }`}
                 >
-                  <Icon className="h-4 w-4 text-amber-400" />
+                  <Icon className="h-4 w-4" />
                   <span>{nav.label}</span>
                 </Link>
               )
             })}
           </nav>
+        </div>
 
-          {/* Interactive Notifications Popover Bell */}
+        {/* Right Status Controls & Staff Profile */}
+        <div className="flex items-center gap-3">
+          {/* Notifications Popover */}
           <div className="relative">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowNotifications(!showNotifications)}
-              className="relative rounded-2xl border-white/10 bg-white/5 text-zinc-300 hover:bg-white/10 hover:text-zinc-100 h-10 w-10 p-0"
+              className="relative rounded-2xl border-white/10 bg-white/5 text-zinc-300 hover:bg-white/10 hover:text-zinc-100 h-10 w-10 p-0 shadow-md"
             >
               <Bell className="h-4 w-4 text-amber-400" />
               {unreadCount > 0 && (
@@ -151,7 +135,7 @@ export function StaffHeader() {
               <div className="absolute right-0 mt-3 w-80 sm:w-96 rounded-[2rem] border border-white/10 bg-zinc-950/95 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.8)] backdrop-blur-2xl z-50 space-y-4">
                 <div className="flex items-center justify-between border-b border-white/10 pb-3">
                   <span className="font-extrabold text-sm text-zinc-100 uppercase tracking-wide flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-amber-400" /> Urgent Alerts
+                    <Sparkles className="h-4 w-4 text-amber-400" /> Notifications
                   </span>
                   <button
                     onClick={clearAllNotifications}
@@ -201,8 +185,8 @@ export function StaffHeader() {
           >
             <Coffee className="h-4 w-4 mr-1.5 text-amber-400" />
             {profile.breakStatus === 'break'
-              ? `On Break (${formatBreakTime(profile.breakSeconds)})`
-              : 'Take Break'}
+              ? `Break (${formatBreakTime(profile.breakSeconds)})`
+              : 'Break'}
           </Button>
 
           {/* Clock In / Out Toggle */}
@@ -215,8 +199,21 @@ export function StaffHeader() {
             }`}
           >
             <Clock className="h-4 w-4 mr-1.5" />
-            {profile.clockedIn ? `Clocked In (${profile.clockInTime})` : 'Clock In'}
+            {profile.clockedIn ? `Clocked In` : 'Clock In'}
           </Button>
+
+          {/* Clean Profile Badge */}
+          <div className="hidden sm:flex items-center gap-2.5 rounded-2xl border border-white/10 bg-white/5 p-1.5 pl-2.5">
+            <div className="text-right text-xs">
+              <p className="font-extrabold text-zinc-100 leading-tight">{cleanName}</p>
+              <p className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">{profile.role}</p>
+            </div>
+            <img
+              src={profile.avatarUrl}
+              alt={profile.name}
+              className="h-8 w-8 rounded-xl border border-amber-500/40 object-cover shadow-sm"
+            />
+          </div>
         </div>
       </div>
     </header>
