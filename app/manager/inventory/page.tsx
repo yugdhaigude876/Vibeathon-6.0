@@ -69,21 +69,9 @@ export default function ManagerInventoryPage() {
   const [newReorder, setNewReorder] = useState('')
   const [saving, setSaving] = useState(false)
 
-  // Sync with full Customer Menu dataset (LUFT_MENU_ITEMS + real-time Supabase overrides)
+  // Always merge full 60+ item LUFT_MENU_ITEMS with real-time Supabase overrides
   const inventoryItems: InventoryItem[] = useMemo(() => {
-    if (realtimeItems && realtimeItems.length > 0) {
-      return realtimeItems.map((i) => ({
-        id: i.id,
-        name: i.name,
-        category: i.category || 'General',
-        price: Number(i.price || 0),
-        stock_level: (i as any).stock_level ?? 24,
-        reorder_level: (i as any).reorder_level ?? 10,
-        is_available: i.is_available ?? true,
-      }))
-    }
-
-    return LUFT_MENU_ITEMS.map((item, idx) => ({
+    const formattedLuft: InventoryItem[] = LUFT_MENU_ITEMS.map((item, idx) => ({
       id: `luft-${idx + 1}`,
       name: item.name,
       category: item.category,
@@ -92,6 +80,32 @@ export default function ManagerInventoryPage() {
       reorder_level: 10,
       is_available: item.is_available,
     }))
+
+    if (!realtimeItems || realtimeItems.length === 0) {
+      return formattedLuft
+    }
+
+    const mergedItems = [...formattedLuft]
+    const existingNames = new Set(mergedItems.map((item) => item.name.toLowerCase()))
+
+    realtimeItems.forEach((i) => {
+      if (!i?.name) return
+      const normalizedName = i.name.toLowerCase()
+      if (!existingNames.has(normalizedName)) {
+        mergedItems.push({
+          id: i.id,
+          name: i.name,
+          category: i.category || 'General',
+          price: Number(i.price || 0),
+          stock_level: (i as any).stock_level ?? 24,
+          reorder_level: (i as any).reorder_level ?? 10,
+          is_available: i.is_available ?? true,
+        })
+        existingNames.add(normalizedName)
+      }
+    })
+
+    return mergedItems
   }, [realtimeItems])
 
   const categories = useMemo(() => {
