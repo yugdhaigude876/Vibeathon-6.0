@@ -30,26 +30,8 @@ export default function LoginPage() {
   const [checkingAuth, setCheckingAuth] = useState(true)
 
   useEffect(() => {
-    async function checkAuth() {
-      const user = await getCurrentUser()
-      if (user) {
-        const { profile } = await getUserProfile(user.id)
-        const role = profile?.role?.toLowerCase() || 'customer'
-
-        if (role === 'manager' || role === 'admin') {
-          router.push('/manager')
-        } else if (role === 'staff') {
-          router.push('/staff/kitchen')
-        } else {
-          router.push('/menu')
-        }
-      } else {
-        setCheckingAuth(false)
-      }
-    }
-
-    checkAuth()
-  }, [router])
+    setCheckingAuth(false)
+  }, [])
 
   useEffect(() => {
     if (error) {
