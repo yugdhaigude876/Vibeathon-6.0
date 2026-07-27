@@ -83,7 +83,7 @@ export function ManagerHeader() {
       </div>
 
       {/* Sub-Navigation Links */}
-      <div className="flex items-center overflow-x-auto no-scrollbar gap-1 border-t border-zinc-900 bg-zinc-950 px-4 py-2 text-xs font-bold">
+      <div className="flex items-center justify-center overflow-x-auto no-scrollbar gap-1 border-t border-zinc-900 bg-zinc-950 px-4 py-2 text-xs font-bold">
         {MANAGER_NAV.map((item) => {
           const isActive = pathname === item.href
           const Icon = item.icon
