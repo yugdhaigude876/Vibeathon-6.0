@@ -103,18 +103,8 @@ export default function SignupPage() {
       await createProfile(user.id, user.email)
     }
 
-    // Supabase returns session: null when email confirmation is required
-    if (user && !user.confirmed_at) {
-      setLoading(false)
-      toast({
-        title: 'Verification Email Sent!',
-        description: `We've sent a verification link to ${email}. Please check your inbox and verify your email before logging in.`,
-      })
-      return
-    }
-
-    toast({ title: 'Account created!', description: 'Redirecting to menu...' })
-    setTimeout(() => router.push('/menu'), 1000)
+    toast({ title: 'Account created successfully!', description: 'You can now log in to your portal.' })
+    setTimeout(() => router.push('/login'), 1000)
   }
 
   async function handleGoogleSignUp() {
