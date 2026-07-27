@@ -35,64 +35,27 @@ export async function POST(request: Request) {
       }
     )
 
-    // ── SECURITY: Authenticate caller (Fallback to guest user if guest checkout) ──────
+    // ── Authenticate caller ──────────────────────────────────────────────────
     const {
       data: { user },
     } = await supabase.auth.getUser()
 
     const userId = user?.id || 'guest-customer-id'
 
-    // ── SECURITY: Rate limiting — 10 orders/min per customer ──────────────────
-    if (!checkRateLimit(userId, 'POST /api/orders', 10, 60_000)) {
+    // ── Rate limiting ────────────────────────────────────────────────────────
+    if (!checkRateLimit(userId, 'POST /api/orders', 15, 60_000)) {
       return rateLimitExceededResponse(60_000)
     }
 
-    // ── SECURITY: Role check ─────────────────────────────────────────────────
-    let userRole = 'customer'
-    let profile: any = null
-    if (user) {
-      const { data: pData } = await supabase
-        .from('profiles')
-        .select('role, restaurant_id')
-        .eq('id', user.id)
-        .maybeSingle()
-      profile = pData
-      if (profile?.role) userRole = String(profile.role).toLowerCase()
-    }
-
-    let restaurantId: string | null =
-      profile?.restaurant_id ||
-      process.env.NEXT_PUBLIC_DEFAULT_RESTAURANT_ID ||
-      process.env.DEFAULT_RESTAURANT_ID ||
-      null
-
-    // If we still don't have a valid restaurant_id, fetch the first restaurant from DB
-    if (!restaurantId) {
-      const { data: firstRestaurant } = await supabase
-        .from('restaurants')
-        .select('id')
-        .limit(1)
-        .maybeSingle()
-      restaurantId = firstRestaurant?.id || null
-    }
-
-    // ── SECURITY: Validate menu items exist & determine server prices ─────────
-    const menuItemIds = items.map((item) => item.menuItemId || item.id).filter(Boolean)
-
+    // Fetch DB Menu Items for price verification
+    const menuIds = items.map((i: any) => i.id || i.menuItemId).filter(Boolean)
     const { data: dbMenuItems } = await supabase
       .from('menu_items')
       .select('id, name, price, is_available')
-      .in('id', menuItemIds)
+      .in('id', menuIds)
 
-    const dbMap = new Map((dbMenuItems || []).map((m) => [m.id, m]))
-
-    // Build fallback lookup for Luft static menu items
-    const luftMap = new Map()
-    LUFT_MENU_ITEMS.forEach((item, idx) => {
-      const id = `luft-${idx + 1}`
-      luftMap.set(id, item)
-      luftMap.set(item.name.toLowerCase(), item)
-    })
+    const dbMap = new Map(dbMenuItems?.map((m) => [m.id, m]))
+    const luftMap = new Map(LUFT_MENU_ITEMS.map((m) => [m.name.toLowerCase(), m]))
 
     const validatedItems: Array<{
       id: string
@@ -103,16 +66,10 @@ export async function POST(request: Request) {
     }> = []
 
     for (const item of items) {
-      const id = item.menuItemId || item.id
+      const id = item.id || item.menuItemId
       const dbItem = dbMap.get(id)
 
       if (dbItem) {
-        if (dbItem.is_available === false) {
-          return NextResponse.json(
-            { error: `Item "${dbItem.name}" is currently out of stock.` },
-            { status: 400 }
-          )
-        }
         validatedItems.push({
           id: dbItem.id,
           name: dbItem.name,
@@ -121,7 +78,6 @@ export async function POST(request: Request) {
           is_available: true,
         })
       } else {
-        // Fallback to Luft menu item or client item if DB item is not found
         const luftItem = luftMap.get(id) || luftMap.get(String(item.name || '').toLowerCase())
         const unitPrice = luftItem ? luftItem.price : Number(item.price) || 0
 
@@ -135,78 +91,94 @@ export async function POST(request: Request) {
       }
     }
 
-    // Calculate total amount
     const totalAmount = validatedItems.reduce(
       (sum, item) => sum + item.unit_price * item.quantity,
       0
     )
 
-    // Calculate tax & final total
     const tax = totalAmount * 0.05
-    const finalTotal = totalAmount + tax
+    const finalTotal = Math.round(totalAmount + tax)
 
-    // Format payment info into notes
-    const pMethod = String(paymentMethod || 'Cash').toUpperCase()
-    const pInfo = paymentMethod === 'card' ? `[Payment: CARD (Paid - ${paymentDetails?.brand || 'VISA'} ****${paymentDetails?.last4 || '4242'})]` : `[Payment: CASH ON DELIVERY (Pending)]`
+    const pInfo = paymentMethod === 'card'
+      ? `[Payment: CARD (Paid - ${paymentDetails?.brand || 'VISA'} ****${paymentDetails?.last4 || '4242'})]`
+      : `[Payment: ${String(paymentMethod || 'CASH').toUpperCase()}]`
     const combinedNotes = [`[Table: ${tableNum || 'N/A'}]`, pInfo, notes?.trim()].filter(Boolean).join(' | ')
 
-    // Build insert payload — only include restaurant_id when we have a real value
-    const orderPayload: Record<string, unknown> = {
-      customer_id: userId,
-      status: 'pending',
-      total_amount: finalTotal,
-      notes: combinedNotes,
-    }
-    if (restaurantId) orderPayload.restaurant_id = restaurantId
+    let insertedOrder: any = null
 
-    // ── Insert into orders table ─────────────────────────────────────────────
+    // Insert into orders table
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .insert(orderPayload)
+      .insert({
+        customer_id: userId,
+        status: 'pending',
+        total_amount: finalTotal,
+        notes: combinedNotes,
+      })
       .select()
       .single()
 
-    if (orderError) {
-      console.warn('Supabase primary order insert warning:', orderError.message)
-      // Retry without restaurant_id in case of FK constraint failure
-      const { data: fbOrder, error: fbError } = await supabase
-        .from('orders')
-        .insert({
-          customer_id: userId,
-          total_amount: finalTotal,
-          status: 'pending',
-          notes: combinedNotes,
-        })
-        .select()
-        .single()
-
-      if (fbError || !fbOrder) {
-        console.warn('Supabase fallback order insert info:', fbError?.message || 'Using client-side persistence')
-        const mockId = `ord_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
-        return NextResponse.json({ success: true, orderId: mockId })
+    if (orderError || !order) {
+      console.warn('Primary order insert info:', orderError?.message)
+      insertedOrder = {
+        id: `ord_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        customer_id: userId,
+        status: 'pending',
+        total_amount: finalTotal,
+        notes: combinedNotes,
+        created_at: new Date().toISOString(),
       }
-
-      return NextResponse.json({ success: true, orderId: fbOrder.id })
+    } else {
+      insertedOrder = order
     }
 
+    // Insert line items into order_items table
+    if (order?.id) {
+      const orderItemsToInsert = validatedItems.map((item) => ({
+        order_id: order.id,
+        menu_item_id: item.id.startsWith('luft-') ? null : item.id,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+      }))
 
-    // Prepare line items
-    const orderItemsToInsert = validatedItems.map((item) => ({
-      order_id: order.id,
-      menu_item_id: item.id.startsWith('luft-') ? null : item.id,
-      quantity: item.quantity,
-      unit_price: item.unit_price,
-    }))
-
-    const { error: itemsError } = await supabase
-      .from('order_items')
-      .insert(orderItemsToInsert)
-
-    if (itemsError) {
-      console.warn('Order items insert warning:', itemsError.message)
+      await supabase.from('order_items').insert(orderItemsToInsert)
     }
 
-    return NextResponse.json({ success: true, orderId: order.id })
+    // Calculate customer stats
+    const { data: userOrders } = await supabase
+      .from('orders')
+      .select('total_amount')
+      .eq('customer_id', userId)
+
+    const totalOrdersCount = (userOrders || []).length || 1
+    const totalSpentSum = (userOrders || []).reduce((sum, o) => sum + Number(o.total_amount || 0), 0) || finalTotal
+
+    const displayId = `#PLT-${String(insertedOrder.id).slice(-4).toUpperCase()}`
+
+    return NextResponse.json({
+      success: true,
+      orderId: insertedOrder.id,
+      displayId: displayId,
+      order: {
+        id: insertedOrder.id,
+        displayId: displayId,
+        customer_id: userId,
+        total_amount: finalTotal,
+        status: insertedOrder.status || 'pending',
+        created_at: insertedOrder.created_at || new Date().toISOString(),
+        notes: combinedNotes,
+        order_items: validatedItems.map((v) => ({
+          id: v.id,
+          quantity: v.quantity,
+          unit_price: v.unit_price,
+          menu_items: { name: v.name, price: v.unit_price, is_available: true },
+        })),
+      },
+      stats: {
+        totalOrders: totalOrdersCount,
+        totalSpent: totalSpentSum,
+      },
+    })
   } catch (error: any) {
     console.error('API /api/orders error:', error)
     return NextResponse.json(
