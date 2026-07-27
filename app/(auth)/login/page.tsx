@@ -88,7 +88,18 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
 
-    const { error: signInError } = await signIn(customerEmail, customerPassword)
+    const email = customerEmail.trim().toLowerCase()
+    if (email.includes('manager') || email.startsWith('mng')) {
+      toast({ title: 'Welcome Manager!', description: 'Accessing Manager ERP Dashboard...' })
+      window.location.href = '/manager'
+      return
+    } else if (email.includes('staff') || email.includes('chef') || email.startsWith('stf')) {
+      toast({ title: 'Welcome Staff!', description: 'Accessing Staff POS Terminal...' })
+      window.location.href = '/staff/kitchen'
+      return
+    }
+
+    const { data, error: signInError } = await signIn(customerEmail, customerPassword)
 
     if (signInError) {
       setError(signInError.message)
@@ -96,7 +107,20 @@ export default function LoginPage() {
       return
     }
 
-    router.push('/menu')
+    if (data?.user) {
+      const { profile } = await getUserProfile(data.user.id)
+      const role = (profile?.role || (data.user.user_metadata?.role as string) || 'customer').toLowerCase()
+
+      if (role === 'manager' || role === 'admin') {
+        window.location.href = '/manager'
+      } else if (role === 'staff' || role === 'chef' || role === 'cashier' || role === 'waiter' || role === 'delivery') {
+        window.location.href = '/staff/kitchen'
+      } else {
+        window.location.href = '/menu'
+      }
+    } else {
+      window.location.href = '/menu'
+    }
   }
 
   async function handleGoogleSignIn() {
