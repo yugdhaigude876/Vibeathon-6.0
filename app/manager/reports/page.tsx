@@ -207,6 +207,47 @@ export default function ManagerReportsPage() {
             </Button>
           </CardContent>
         </Card>
+        <Card className="border-zinc-800 bg-zinc-900/80 shadow-md md:col-span-2">
+          <CardHeader className="pb-3 border-b border-zinc-800">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base font-bold text-zinc-100 flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-amber-400" />
+                Enterprise System Audit Trail & Activity Log
+              </CardTitle>
+              <Badge className="bg-amber-500/10 text-amber-300 border-amber-500/30 text-xs font-mono">
+                Security & Governance
+              </Badge>
+            </div>
+            <CardDescription className="text-xs text-zinc-400">
+              Timestamped log of price edits, role changes, inventory adjustments, and managerial overrides.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-4 space-y-3">
+            <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-3 text-xs space-y-2">
+              <div className="flex items-center justify-between border-b border-zinc-900 pb-2">
+                <span className="font-mono text-zinc-400">2026-07-27 14:30:12</span>
+                <Badge className="bg-blue-500/20 text-blue-300 text-[10px]">Price Update</Badge>
+              </div>
+              <p className="text-zinc-200"><span className="font-bold text-amber-400">admin.manager@platr.com</span> updated Truffle Risotto price from ₹720 to ₹750</p>
+            </div>
+
+            <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-3 text-xs space-y-2">
+              <div className="flex items-center justify-between border-b border-zinc-900 pb-2">
+                <span className="font-mono text-zinc-400">2026-07-27 13:15:45</span>
+                <Badge className="bg-amber-500/20 text-amber-300 text-[10px]">Stock Alert</Badge>
+              </div>
+              <p className="text-zinc-200"><span className="font-bold text-amber-400">kitchen.staff@platr.com</span> marked 5kg Fresh Basil as consumed</p>
+            </div>
+
+            <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-3 text-xs space-y-2">
+              <div className="flex items-center justify-between border-b border-zinc-900 pb-2">
+                <span className="font-mono text-zinc-400">2026-07-27 11:00:00</span>
+                <Badge className="bg-purple-500/20 text-purple-300 text-[10px]">RBAC Role Change</Badge>
+              </div>
+              <p className="text-zinc-200"><span className="font-bold text-amber-400">admin.manager@platr.com</span> updated user permissions for Priya Verma</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

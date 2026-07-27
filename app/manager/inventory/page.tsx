@@ -216,6 +216,69 @@ export default function ManagerInventoryPage() {
         </Card>
       )}
 
+      {/* Menu Performance Matrix (BCG Matrix for Restaurant Items) */}
+      <Card className="border-amber-500/20 bg-gradient-to-br from-zinc-900 via-zinc-900/90 to-zinc-950">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base font-bold text-zinc-100 flex items-center gap-2">
+                <Tag className="h-4 w-4 text-amber-400" />
+                Menu Matrix Intelligence & Profit Optimization
+              </CardTitle>
+              <CardDescription className="text-xs text-zinc-400 mt-0.5">
+                Automated classification of dishes into Stars, Cash Cows, Puzzles, and Dogs based on profitability and popularity.
+              </CardDescription>
+            </div>
+            <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30 text-[10px] uppercase font-bold">
+              BCG Menu Matrix
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="p-4 pt-2">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-amber-400 uppercase">⭐ Star Items</span>
+                <Badge className="bg-amber-500 text-zinc-950 font-extrabold text-[10px]">High Profit • High Sales</Badge>
+              </div>
+              <p className="text-xs text-zinc-300 font-semibold mt-2">Truffle Mushroom Risotto</p>
+              <p className="text-[11px] text-zinc-400">Margin: 74.6% | Sales: 420 orders</p>
+              <p className="text-[10px] text-amber-300 italic mt-1 font-mono">Action: Maintain quality & feature on menu cover</p>
+            </div>
+
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-emerald-400 uppercase">🐄 Cash Cows</span>
+                <Badge className="bg-emerald-500 text-zinc-950 font-extrabold text-[10px]">Low Margin • High Volume</Badge>
+              </div>
+              <p className="text-xs text-zinc-300 font-semibold mt-2">Woodfired Margherita</p>
+              <p className="text-[11px] text-zinc-400">Margin: 80.0% | Sales: 680 orders</p>
+              <p className="text-[10px] text-emerald-300 italic mt-1 font-mono">Action: Maintain speed & efficient prep</p>
+            </div>
+
+            <div className="rounded-xl border border-blue-500/30 bg-blue-500/5 p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-blue-400 uppercase">🧩 Puzzles</span>
+                <Badge className="bg-blue-500 text-zinc-950 font-extrabold text-[10px]">High Margin • Low Volume</Badge>
+              </div>
+              <p className="text-xs text-zinc-300 font-semibold mt-2">Smoked Salmon Carpaccio</p>
+              <p className="text-[11px] text-zinc-400">Margin: 54.3% | Sales: 85 orders</p>
+              <p className="text-[10px] text-blue-300 italic mt-1 font-mono">Action: Pair with cocktail combo offer</p>
+            </div>
+
+            <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-red-400 uppercase">🐕 Dogs</span>
+                <Badge className="bg-red-500 text-white font-extrabold text-[10px]">Low Margin • Low Volume</Badge>
+              </div>
+              <p className="text-xs text-zinc-300 font-semibold mt-2">Steamed Edamame (Salted)</p>
+              <p className="text-[11px] text-zinc-400">Margin: 44.7% | Sales: 60 orders</p>
+              <p className="text-[10px] text-red-300 italic mt-1 font-mono">Action: Replace with Garlic Bread</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Filter & Search Bar */}
       <div className="grid gap-4 md:grid-cols-3 bg-zinc-900/70 p-4 rounded-2xl border border-zinc-800">
         <div className="relative md:col-span-1">

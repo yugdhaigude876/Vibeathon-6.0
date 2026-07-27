@@ -25,13 +25,9 @@ const MANAGER_NAV = [
   { label: 'Executive Dashboard', href: '/manager', icon: BarChart3 },
   { label: 'Live Operations', href: '/manager/monitoring', icon: Activity },
   { label: 'User & Staff RBAC', href: '/manager/users', icon: Users },
-  { label: 'Menu & Pricing ERP', href: '/manager/inventory', icon: Utensils },
-  { label: 'Raw Inventory', href: '/manager/raw-inventory', icon: Package },
-  { label: 'Customer CRM', href: '/manager/crm', icon: Users },
+  { label: 'Menu & Inventory ERP', href: '/manager/inventory', icon: Package },
   { label: 'Marketing & Loyalty', href: '/manager/marketing', icon: Megaphone },
-  { label: 'Finance & GST', href: '/manager/finance', icon: DollarSign },
   { label: 'AI Business Intelligence', href: '/manager/ai-insights', icon: Sparkles },
-  { label: 'Multi-Branch', href: '/manager/branches', icon: Building2 },
   { label: 'Reports & Exports', href: '/manager/reports', icon: FileText },
 ]
 
