@@ -105,7 +105,7 @@ export function ManagerHeader() {
       </div>
 
       {/* Sub-Navigation Links */}
-      <div className="flex items-center justify-center overflow-x-auto no-scrollbar gap-1 border-t border-zinc-900 bg-zinc-950 px-4 py-2 text-xs font-bold">
+      <div className="flex items-center justify-start lg:justify-center overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-950 gap-1 border-t border-zinc-900 bg-zinc-950 px-4 py-2 text-xs font-bold">
         {MANAGER_NAV.map((item) => {
           const isActive = pathname === item.href
           const Icon = item.icon
@@ -113,7 +113,7 @@ export function ManagerHeader() {
             <Link
               key={item.href}
               href={item.href}
-              className={`shrink-0 flex items-center gap-2 rounded-xl px-3.5 py-1.5 uppercase transition-all ${
+              className={`shrink-0 flex items-center gap-2 rounded-xl px-3 py-1.5 uppercase transition-all ${
                 isActive
                   ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/10 font-black'
                   : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900'
