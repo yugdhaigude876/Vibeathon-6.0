@@ -40,5 +40,10 @@ export function create<T>(
     },
   })
 
-  return useStore
+  return useStore as (() => T) & {
+    getState: () => T
+    setState: (partial: Partial<T> | ((state: T) => Partial<T> | T)) => void
+    subscribe: (listener: () => void) => () => void
+  }
 }
+

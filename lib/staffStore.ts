@@ -37,7 +37,9 @@ interface StaffStoreState {
   mergeTables: (targetTableId: string, sourceTableId: string) => void
   splitBill: (orderId: string, splitParts: number) => void
   addRequestToTable: (tableId: string, request: string) => void
+  removeCustomerRequestFromTable: (tableId: string, requestId: string) => void
   clearTableRequests: (tableId: string) => void
+
 
   // Customer Requests Ticket Queue
   requests: CustomerTicketRequest[]
@@ -244,193 +246,8 @@ export const useStaffStore = create<StaffStoreState>((set) => ({
       }),
     })),
 
-const INITIAL_PROFILE: StaffProfile = {
-  name: 'Chef Alex Rivera',
-  role: 'chef',
-  branch: 'Luft Main Dining (Bandra)',
-  shift: 'Evening (16:00 - 00:00)',
-  avatarUrl: 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=150&auto=format&fit=crop&q=80',
-  clockedIn: true,
-  clockInTime: '16:00 PM',
-  breakStatus: 'none',
-  breakSeconds: 0,
-  hoursWorkedToday: 5.5,
-  performanceScore: 96,
-}
-
-const INITIAL_ORDERS: EnterpriseOrder[] = []
-
-const INITIAL_TABLES: WaiterTable[] = [
-  { id: 't1', tableNumber: 'T-01', capacity: 2, occupancy: 0, status: 'available', currentBillAmount: 0, customerRequests: [] },
-  { id: 't2', tableNumber: 'T-02', capacity: 4, occupancy: 0, status: 'available', currentBillAmount: 0, customerRequests: [] },
-  { id: 't3', tableNumber: 'T-03', capacity: 6, occupancy: 0, status: 'available', currentBillAmount: 0, customerRequests: [] },
-  { id: 't4', tableNumber: 'T-04', capacity: 4, occupancy: 0, status: 'available', currentBillAmount: 0, customerRequests: [] },
-  { id: 't5', tableNumber: 'T-05', capacity: 2, occupancy: 0, status: 'available', currentBillAmount: 0, customerRequests: [] },
-  { id: 't6', tableNumber: 'T-06', capacity: 8, occupancy: 0, status: 'available', currentBillAmount: 0, customerRequests: [] },
-]
-
-const INITIAL_REQUESTS: CustomerTicketRequest[] = []
-
-const INITIAL_INVENTORY: InventoryAlert[] = [
-  { id: 'inv-1', ingredient: 'Truffle Oil (500ml)', remainingQty: '120 ml', expectedOutTime: 'In ~2 hours', priority: 'critical', isOutOfStock: false },
-  { id: 'inv-2', ingredient: 'Fresh Avocado', remainingQty: '4 units', expectedOutTime: 'In ~1 hour', priority: 'high', isOutOfStock: false },
-]
-
-const INITIAL_NOTIFICATIONS: StaffNotification[] = []
-
-export const useStaffStore = create<StaffStoreState>((set) => ({
-  profile: INITIAL_PROFILE,
-  setRole: (role: StaffRole) =>
-    set((state: StaffStoreState) => ({
-      profile: { ...state.profile, role },
-    })),
-  toggleClockIn: () =>
-    set((state: StaffStoreState) => ({
-      profile: {
-        ...state.profile,
-        clockedIn: !state.profile.clockedIn,
-        clockInTime: !state.profile.clockedIn ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : null,
-      },
-    })),
-  toggleBreak: () =>
-    set((state: StaffStoreState) => ({
-      profile: {
-        ...state.profile,
-        breakStatus: state.profile.breakStatus === 'break' ? 'none' : 'break',
-      },
-    })),
-  incrementBreakSeconds: () =>
-    set((state: StaffStoreState) => ({
-      profile: {
-        ...state.profile,
-        breakSeconds: (state.profile.breakSeconds || 0) + 1,
-      },
-    })),
-
-  orders: INITIAL_ORDERS,
-  updateOrderStatus: (orderId: string, status: OrderWorkflowStatus) =>
-    set((state: StaffStoreState) => {
-      const targetId = (orderId || '').toLowerCase()
-      const updatedOrders = state.orders.map((ord: EnterpriseOrder) => {
-        const matches =
-          (ord.id || '').toLowerCase() === targetId ||
-          (ord.displayId || '').toLowerCase() === targetId ||
-          (ord.id || '').toLowerCase().includes(targetId) ||
-          targetId.includes((ord.id || '').toLowerCase())
-
-        return matches ? { ...ord, status } : ord
-      })
-
-      if (typeof window !== 'undefined') {
-        try {
-          // 1. Sync to local user orders cache
-          const localOrders = JSON.parse(localStorage.getItem('platr_user_orders') || '[]')
-          const updatedLocal = localOrders.map((o: any) => {
-            const matches =
-              (o.id || '').toLowerCase() === targetId ||
-              (o.displayId || '').toLowerCase() === targetId ||
-              (o.id || '').toLowerCase().includes(targetId) ||
-              targetId.includes((o.id || '').toLowerCase())
-
-            return matches ? { ...o, status } : o
-          })
-          localStorage.setItem('platr_user_orders', JSON.stringify(updatedLocal))
-
-          // 2. Broadcast status update across tabs
-          if ('BroadcastChannel' in window) {
-            const bc = new BroadcastChannel('luft_live_orders_channel')
-            bc.postMessage({ type: 'STATUS_UPDATE', orderId, status })
-            bc.close()
-          }
-
-          // 3. Dispatch local event
-          window.dispatchEvent(
-            new CustomEvent('luft_order_status_update', {
-              detail: { orderId, status, timestamp: Date.now() },
-            })
-          )
-
-          // 4. Update storage event trigger
-          localStorage.setItem(
-            'luft_last_status_update',
-            JSON.stringify({ orderId, status, broadcastTimestamp: Date.now() })
-          )
-        } catch (err) {
-          console.warn('Live order status sync warning:', err)
-        }
-      }
-
-      return { orders: updatedOrders }
-    }),
-  rejectOrder: (orderId: string, reason = 'Kitchen capacity full') =>
-    set((state: StaffStoreState) => ({
-      orders: state.orders.map((ord: EnterpriseOrder) =>
-        ord.id === orderId || ord.displayId === orderId ? { ...ord, status: 'cancelled', cancelledReason: reason } : ord
-      ),
-      notifications: [
-        {
-          id: `n-${Date.now()}`,
-          title: `❌ Order ${orderId} Cancelled`,
-          message: `Order was rejected. Reason: ${reason}`,
-          timestamp: 'Just now',
-          type: 'cancelled',
-          read: false,
-        },
-        ...state.notifications,
-      ],
-    })),
-  dispatchOrder: (orderId: string, riderName = 'Rider Vikram Singh') =>
-    set((state: StaffStoreState) => ({
-      orders: state.orders.map((ord: EnterpriseOrder) =>
-        ord.id === orderId || ord.displayId === orderId
-          ? { ...ord, status: 'picked_up', deliveryStatus: 'out_for_delivery', assignedDeliveryStaff: riderName }
-          : ord
-      ),
-    })),
-  assignDeliveryRider: (orderId: string, riderName: string) =>
-    set((state: StaffStoreState) => ({
-      orders: state.orders.map((ord: EnterpriseOrder) =>
-        ord.id === orderId || ord.displayId === orderId ? { ...ord, assignedDeliveryStaff: riderName, deliveryStatus: 'assigned' } : ord
-      ),
-    })),
-  cancelOrderItem: (orderId: string, itemId: string) =>
-    set((state: StaffStoreState) => ({
-      orders: state.orders.map((ord: EnterpriseOrder) => {
-        if (ord.id !== orderId && ord.displayId !== orderId) return ord
-        const updatedItems = ord.items.map((item: ExtendedOrderItem) =>
-          item.id === itemId ? { ...item, isCancelled: true } : item
-        )
-        const newTotal = updatedItems
-          .filter((i: ExtendedOrderItem) => !i.isCancelled)
-          .reduce((sum: number, i: ExtendedOrderItem) => sum + i.price * i.quantity, 0)
-        return { ...ord, items: updatedItems, totalAmount: newTotal }
-      }),
-    })),
-  addOrder: (order: EnterpriseOrder) =>
-    set((state: StaffStoreState) => ({
-      orders: [order, ...state.orders.filter((o) => o.id !== order.id && o.displayId !== order.displayId)],
-    })),
-
-  tables: INITIAL_TABLES,
-  updateTableStatus: (tableId: string, status: WaiterTable['status']) =>
-    set((state: StaffStoreState) => ({
-      tables: state.tables.map((tbl: WaiterTable) => {
-        if (tbl.id !== tableId) return tbl
-        if (status === 'available') {
-          return {
-            ...tbl,
-            status: 'available',
-            occupancy: 0,
-            currentBillAmount: 0,
-            customerRequests: [],
-            currentOrderId: undefined,
-            notes: undefined,
-          }
-        }
-        return { ...tbl, status }
-      }),
-    })),
   assignWaiterToTable: (tableId: string, waiterName: string) =>
+
     set((state: StaffStoreState) => ({
       tables: state.tables.map((tbl: WaiterTable) => (tbl.id === tableId ? { ...tbl, assignedWaiter: waiterName } : tbl)),
     })),
@@ -505,15 +322,20 @@ export const useStaffStore = create<StaffStoreState>((set) => ({
           : tbl
       ),
     })),
-  removeCustomerRequestFromTable: (tableId: string, request: string) =>
+  removeCustomerRequestFromTable: (tableId: string, requestId: string) =>
     set((state: StaffStoreState) => ({
       tables: state.tables.map((tbl: WaiterTable) =>
         tbl.id === tableId
-          ? { ...tbl, customerRequests: tbl.customerRequests.filter((r) => r !== request) }
+          ? {
+              ...tbl,
+              customerRequests: tbl.customerRequests.filter((r) => r !== requestId),
+            }
           : tbl
       ),
     })),
+
   clearTableRequests: (tableId: string) =>
+
     set((state: StaffStoreState) => ({
       tables: state.tables.map((tbl: WaiterTable) => (tbl.id === tableId ? { ...tbl, customerRequests: [] } : tbl)),
     })),
