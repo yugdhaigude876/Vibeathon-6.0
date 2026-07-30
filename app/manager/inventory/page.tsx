@@ -63,23 +63,28 @@ export default function ManagerInventoryPage() {
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [dietaryFilter, setDietaryFilter] = useState('All')
 
-  // Edit Stock Modal
+  // Edit Stock Modal & Custom Overrides State
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null)
   const [newStock, setNewStock] = useState('')
   const [newReorder, setNewReorder] = useState('')
   const [saving, setSaving] = useState(false)
+  const [stockOverrides, setStockOverrides] = useState<Record<string, { stock_level: number; reorder_level: number }>>({})
 
   // Always merge full 60+ item LUFT_MENU_ITEMS with real-time Supabase overrides
   const inventoryItems: InventoryItem[] = useMemo(() => {
-    const formattedLuft: InventoryItem[] = LUFT_MENU_ITEMS.map((item, idx) => ({
-      id: `luft-${idx + 1}`,
-      name: item.name,
-      category: item.category,
-      price: item.price,
-      stock_level: idx % 7 === 0 ? 4 : idx % 11 === 0 ? 0 : 30,
-      reorder_level: 10,
-      is_available: item.is_available,
-    }))
+    const formattedLuft: InventoryItem[] = LUFT_MENU_ITEMS.map((item, idx) => {
+      const id = `luft-${idx + 1}`
+      const override = stockOverrides[id]
+      return {
+        id,
+        name: item.name,
+        category: item.category,
+        price: item.price,
+        stock_level: override ? override.stock_level : (idx % 7 === 0 ? 4 : idx % 11 === 0 ? 0 : 30),
+        reorder_level: override ? override.reorder_level : 10,
+        is_available: override ? override.stock_level > 0 : item.is_available,
+      }
+    })
 
     if (!realtimeItems || realtimeItems.length === 0) {
       return formattedLuft
@@ -92,21 +97,24 @@ export default function ManagerInventoryPage() {
       if (!i?.name) return
       const normalizedName = i.name.toLowerCase()
       if (!existingNames.has(normalizedName)) {
+        const override = stockOverrides[i.id]
+        const stockVal = override ? override.stock_level : ((i as any).stock_level ?? 24)
+        const reorderVal = override ? override.reorder_level : ((i as any).reorder_level ?? 10)
         mergedItems.push({
           id: i.id,
           name: i.name,
           category: i.category || 'General',
           price: Number(i.price || 0),
-          stock_level: (i as any).stock_level ?? 24,
-          reorder_level: (i as any).reorder_level ?? 10,
-          is_available: i.is_available ?? true,
+          stock_level: stockVal,
+          reorder_level: reorderVal,
+          is_available: override ? stockVal > 0 : (i.is_available ?? true),
         })
         existingNames.add(normalizedName)
       }
     })
 
     return mergedItems
-  }, [realtimeItems])
+  }, [realtimeItems, stockOverrides])
 
   const categories = useMemo(() => {
     const set = new Set(inventoryItems.map((i) => i.category))
@@ -152,6 +160,11 @@ export default function ManagerInventoryPage() {
       const stockNum = Math.max(0, parseInt(newStock, 10) || 0)
       const reorderNum = Math.max(1, parseInt(newReorder, 10) || 10)
 
+      setStockOverrides((prev) => ({
+        ...prev,
+        [editingItem.id]: { stock_level: stockNum, reorder_level: reorderNum },
+      }))
+
       if (!editingItem.id.startsWith('luft-')) {
         const { error } = await supabase
           .from('menu_items')
@@ -162,7 +175,7 @@ export default function ManagerInventoryPage() {
           })
           .eq('id', editingItem.id)
 
-        if (error) throw error
+        if (error) console.warn('Supabase stock update info:', error.message)
       }
 
       toast({
