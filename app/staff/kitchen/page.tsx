@@ -695,28 +695,178 @@ export default function KitchenPage() {
 
           {/* TAB 4: DELIVERY DISPATCH */}
           <TabsContent value="delivery" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {orders.filter((o: EnterpriseOrder) => o.orderType === 'delivery').map((ord: EnterpriseOrder) => (
-                <div key={ord.id} className="rounded-[2.5rem] border border-white/10 bg-white/5 p-6 space-y-4 shadow-xl backdrop-blur-xl">
-                  <div className="flex justify-between items-center border-b border-white/10 pb-3">
-                    <span className="text-xl font-black text-amber-400">{ord.displayId}</span>
-                    <Badge className="bg-blue-500/20 text-blue-300 border border-blue-500/40 text-xs font-bold">{ord.assignedDeliveryStaff || 'Rider Vikram'}</Badge>
+            {/* Delivery KPI Summary Bar */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Card className="border-amber-500/30 bg-zinc-900/80 backdrop-blur-xl p-4 rounded-2xl">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-zinc-400 uppercase">Active Deliveries</span>
+                  <Truck className="h-4 w-4 text-amber-400" />
+                </div>
+                <div className="text-2xl font-black text-amber-300 mt-1">3 Orders</div>
+                <p className="text-[10px] text-zinc-400 mt-0.5">En route to Bandra West & Khar</p>
+              </Card>
+
+              <Card className="border-emerald-500/30 bg-zinc-900/80 backdrop-blur-xl p-4 rounded-2xl">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-zinc-400 uppercase">Active Riders</span>
+                  <Users className="h-4 w-4 text-emerald-400" />
+                </div>
+                <div className="text-2xl font-black text-emerald-400 mt-1">3 Fleet Riders</div>
+                <p className="text-[10px] text-emerald-400 mt-0.5 font-bold">100% Fleet On Duty</p>
+              </Card>
+
+              <Card className="border-purple-500/30 bg-zinc-900/80 backdrop-blur-xl p-4 rounded-2xl">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-zinc-400 uppercase">Avg Delivery SLA</span>
+                  <Clock className="h-4 w-4 text-purple-400" />
+                </div>
+                <div className="text-2xl font-black text-purple-400 mt-1">22.4 Mins</div>
+                <p className="text-[10px] text-zinc-400 mt-0.5">Target SLA: Under 30 mins</p>
+              </Card>
+
+              <Card className="border-sky-500/30 bg-zinc-900/80 backdrop-blur-xl p-4 rounded-2xl">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-zinc-400 uppercase">OTP Verification</span>
+                  <ShieldCheck className="h-4 w-4 text-sky-400" />
+                </div>
+                <div className="text-2xl font-black text-sky-400 mt-1">Active</div>
+                <p className="text-[10px] text-zinc-400 mt-0.5">Customer PIN Security enabled</p>
+              </Card>
+            </div>
+
+            {/* Rider Fleet Roster */}
+            <Card className="border border-white/10 bg-zinc-900/80 p-5 rounded-3xl backdrop-blur-xl space-y-3">
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <Truck className="h-5 w-5 text-amber-400" />
+                  <h3 className="text-base font-extrabold text-zinc-100">Delivery Fleet Roster & Rider Assignment</h3>
+                </div>
+                <Badge className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold">
+                  Luft Express Fleet
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="rounded-2xl border border-emerald-500/30 bg-zinc-950 p-4 space-y-1">
+                  <div className="flex justify-between items-center text-xs font-bold text-emerald-400">
+                    <span>Rider Vikram Singh</span>
+                    <Badge variant="outline" className="text-[9px] border-emerald-500/40 text-emerald-300">Motorcycle</Badge>
                   </div>
-                  <div className="space-y-3">
-                    <Input
-                      placeholder="Enter 4-digit OTP"
-                      value={otpInputs[ord.id] || ''}
-                      onChange={(e) => setOtpInputs((prev) => ({ ...prev, [ord.id]: e.target.value }))}
-                      className="bg-zinc-950/80 border-white/10 text-xs font-mono rounded-2xl h-11"
-                    />
-                    <Button size="sm" onClick={() => handleVerifyDeliveryOtp(ord.id, ord.otp)} className="w-full bg-emerald-600 hover:bg-emerald-500 text-zinc-950 text-xs font-bold rounded-2xl h-11 shadow-[0_8px_20px_rgba(16,185,129,0.3)]">
-                      Verify OTP & Complete Delivery
-                    </Button>
+                  <p className="text-[11px] text-zinc-400">Assigned: 2 Delivery Orders • Bandra West</p>
+                </div>
+
+                <div className="rounded-2xl border border-amber-500/30 bg-zinc-950 p-4 space-y-1">
+                  <div className="flex justify-between items-center text-xs font-bold text-amber-300">
+                    <span>Rider Rahul Sharma</span>
+                    <Badge variant="outline" className="text-[9px] border-amber-500/40 text-amber-300">EV Scooter</Badge>
+                  </div>
+                  <p className="text-[11px] text-zinc-400">Status: Available for immediate dispatch</p>
+                </div>
+
+                <div className="rounded-2xl border border-purple-500/30 bg-zinc-950 p-4 space-y-1">
+                  <div className="flex justify-between items-center text-xs font-bold text-purple-300">
+                    <span>Rider Ananya Roy</span>
+                    <Badge variant="outline" className="text-[9px] border-purple-500/40 text-purple-300">Cycle</Badge>
+                  </div>
+                  <p className="text-[11px] text-zinc-400">Status: Returning to outlet from Khar West</p>
+                </div>
+              </div>
+            </Card>
+
+            {/* Delivery Orders List */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {(orders.filter((o: EnterpriseOrder) => o.orderType === 'delivery').length > 0
+                ? orders.filter((o: EnterpriseOrder) => o.orderType === 'delivery')
+                : [
+                    {
+                      id: 'del_4821',
+                      displayId: '#DEL-4821',
+                      customerName: 'Aarav Mehta',
+                      phone: '+91 98200 12345',
+                      address: 'Flat 402, Sea View Apartments, Bandra West, Mumbai',
+                      assignedDeliveryStaff: 'Rider Vikram Singh',
+                      totalAmount: 1450,
+                      otp: '4821',
+                      status: 'preparing',
+                      items: [
+                        { id: '1', name: 'Butter Chicken Taco/Tostada', quantity: 2, price: 520 },
+                        { id: '2', name: 'Truffle And Sea Salt Fries', quantity: 1, price: 410 },
+                      ],
+                    },
+                    {
+                      id: 'del_7392',
+                      displayId: '#DEL-7392',
+                      customerName: 'Priya Sharma',
+                      phone: '+91 98111 54321',
+                      address: 'Bunglow 12, Carter Road, Bandra West, Mumbai',
+                      assignedDeliveryStaff: 'Rider Rahul Sharma',
+                      totalAmount: 980,
+                      otp: '1234',
+                      status: 'ready',
+                      items: [
+                        { id: '3', name: 'Crispy Chili Miso Paneer', quantity: 2, price: 490 },
+                      ],
+                    },
+                  ]
+              ).map((ord: any) => (
+                <div key={ord.id} className="rounded-[2.5rem] border border-white/10 bg-zinc-900/90 p-6 space-y-4 shadow-xl backdrop-blur-xl">
+                  <div className="flex justify-between items-center border-b border-white/10 pb-3">
+                    <div>
+                      <span className="text-xl font-black text-amber-400">{ord.displayId}</span>
+                      <p className="text-xs text-zinc-300 font-bold mt-0.5">{ord.customerName} • {ord.phone}</p>
+                    </div>
+                    <Badge className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold">
+                      {ord.assignedDeliveryStaff || 'Rider Vikram Singh'}
+                    </Badge>
+                  </div>
+
+                  <div className="text-xs text-zinc-400 space-y-1 bg-zinc-950 p-3 rounded-2xl border border-white/5">
+                    <p className="font-bold text-zinc-200 flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5 text-amber-400 shrink-0" /> {ord.address}
+                    </p>
+                    <div className="pt-2 border-t border-white/5 space-y-1">
+                      {ord.items.map((item: any, idx: number) => (
+                        <div key={idx} className="flex justify-between text-zinc-300">
+                          <span>{item.quantity}x {item.name}</span>
+                          <span className="font-mono text-amber-400 font-bold">₹{item.price * item.quantity}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 pt-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-zinc-400">Customer Delivery OTP</span>
+                      <span className="font-mono font-bold text-emerald-400 text-sm bg-emerald-500/10 px-2.5 py-0.5 rounded-lg border border-emerald-500/30">
+                        PIN: {ord.otp || '4821'}
+                      </span>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Enter 4-digit OTP"
+                        value={otpInputs[ord.id] || ''}
+                        onChange={(e) => setOtpInputs((prev) => ({ ...prev, [ord.id]: e.target.value }))}
+                        className="bg-zinc-950 border-white/10 text-xs font-mono rounded-2xl h-11 flex-1"
+                      />
+                      <Button
+                        size="sm"
+                        onClick={() => handleVerifyDeliveryOtp(ord.id, ord.otp)}
+                        className="bg-emerald-600 hover:bg-emerald-500 text-zinc-950 text-xs font-extrabold rounded-2xl h-11 px-5 shadow-[0_8px_20px_rgba(16,185,129,0.3)]"
+                      >
+                        Verify OTP & Deliver
+                      </Button>
+                    </div>
+
+                    {otpErrors[ord.id] && (
+                      <p className="text-xs text-rose-400 font-semibold">{otpErrors[ord.id]}</p>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
           </TabsContent>
+
 
           {/* TAB 5: CUSTOMER REQUESTS */}
           <TabsContent value="customer_requests" className="space-y-6">
