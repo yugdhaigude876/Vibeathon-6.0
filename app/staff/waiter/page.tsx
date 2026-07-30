@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { StaffHeader } from '@/components/staff/StaffHeader'
 import { useStaffStore, resetAllSystemData } from '@/lib/staffStore'
 import { WaiterTable } from '@/lib/staffTypes'
@@ -29,10 +29,47 @@ export default function WaiterPage() {
 
   const selectedTable = tables.find((t) => t.id === selectedTableId) || tables[0]
 
+  // Real-time listener for Customer Service Bell Requests
+  useEffect(() => {
+    const handleIncomingRequest = (req: any) => {
+      if (!req) return
+      const targetTable = tables.find(
+        (t) => t.tableNumber.toLowerCase() === (req.tableNumber || req.table_number || '').toLowerCase()
+      ) || tables[3] // Default T-04
+
+      if (targetTable) {
+        addRequestToTable(targetTable.id, req.request)
+        addCustomerRequest({
+          tableNumber: targetTable.tableNumber,
+          type: 'Call Waiter',
+          note: req.request,
+          priority: 'urgent',
+        })
+        toast({
+          title: `NEW SERVICE BELL ALERT! 🔔 (${targetTable.tableNumber})`,
+          description: `Guest requested: ${req.request}`,
+        })
+      }
+
+    }
+
+    // 1. BroadcastChannel Listener
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      const bc = new BroadcastChannel('luft_waiter_requests_channel')
+      bc.onmessage = (event) => {
+        if (event.data?.type === 'NEW_WAITER_REQUEST') {
+          handleIncomingRequest(event.data.request)
+        }
+      }
+      return () => bc.close()
+    }
+  }, [tables])
+
   const handleResetSystem = () => {
     try {
       localStorage.removeItem('platr_user_orders')
       localStorage.removeItem('platr_user_reservations')
+      localStorage.removeItem('platr_customer_requests')
       localStorage.removeItem('luft_last_new_order')
       localStorage.removeItem('luft_last_status_update')
     } catch (e) {
@@ -44,6 +81,7 @@ export default function WaiterPage() {
       description: 'All system orders, testing stats, and tables have been reset to zero.',
     })
   }
+
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 pb-16">

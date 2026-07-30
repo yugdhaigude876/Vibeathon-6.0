@@ -52,3 +52,43 @@ export function notifyStaffOfNewOrder(orderData: any) {
     console.error('Failed to broadcast new order:', err)
   }
 }
+
+export function notifyWaiterOfCustomerRequest(requestData: { tableNumber: string; requestText: string; customerName?: string }) {
+  try {
+    if (typeof window !== 'undefined') {
+      const formattedRequest = {
+        id: `req_${Date.now()}`,
+        tableNumber: requestData.tableNumber || 'T-04',
+        table_number: requestData.tableNumber || 'T-04',
+        request: requestData.requestText,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        status: 'pending',
+        customerName: requestData.customerName || 'Table Guest',
+      }
+
+      // Save to localStorage
+      try {
+        const existing: any[] = JSON.parse(localStorage.getItem('platr_customer_requests') || '[]')
+        existing.unshift(formattedRequest)
+        localStorage.setItem('platr_customer_requests', JSON.stringify(existing.slice(0, 20)))
+      } catch (err) {
+        console.warn('platr_customer_requests save warning:', err)
+      }
+
+      // Broadcast via BroadcastChannel
+      if ('BroadcastChannel' in window) {
+        const bc = new BroadcastChannel('luft_waiter_requests_channel')
+        bc.postMessage({ type: 'NEW_WAITER_REQUEST', request: formattedRequest })
+        bc.close()
+      }
+
+      // Dispatch local CustomEvent
+      window.dispatchEvent(new CustomEvent('luft_waiter_request_event', { detail: formattedRequest }))
+      
+      localStorage.setItem('luft_last_waiter_request', JSON.stringify({ ...formattedRequest, timestamp: Date.now() }))
+    }
+  } catch (err) {
+    console.error('Failed to broadcast waiter request:', err)
+  }
+}
+

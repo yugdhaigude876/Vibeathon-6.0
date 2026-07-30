@@ -24,10 +24,17 @@ import {
   Star,
   ThumbsUp,
   MessageSquare,
+  Bell,
+  Droplet,
+  FileText,
+  UtensilsCrossed,
+  UserCheck,
 } from 'lucide-react'
 
 import { createClient } from '@/lib/supabase'
 import { useToast } from '@/hooks/use-toast'
+import { notifyWaiterOfCustomerRequest } from '@/lib/orderBroadcaster'
+
 import { useRoleGuard } from '@/hooks/useRoleGuard'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -114,6 +121,26 @@ export default function OrderTrackingPage() {
   const [feedbackSubmitted, setFeedbackSubmitted] = useState<boolean>(false)
   const [feedbackNotes, setFeedbackNotes] = useState<string>('')
 
+  // 1-Click Call Waiter Service Bell State
+  const [activeWaiterRequest, setActiveWaiterRequest] = useState<string | null>(null)
+
+  const handleCallWaiterRequest = (requestLabel: string) => {
+    const tableNum = (order as any)?.table_number || (order as any)?.tableNumber || 'T-04'
+    const custName = (order as any)?.customer_name || 'Table Guest'
+    
+    notifyWaiterOfCustomerRequest({
+      tableNumber: String(tableNum),
+      requestText: requestLabel,
+      customerName: custName,
+    })
+
+    setActiveWaiterRequest(requestLabel)
+    toast({
+      title: 'Service Request Sent! 🛎️',
+      description: `Host notified: "${requestLabel}" for Table ${tableNum}. Staff will arrive shortly.`,
+    })
+  }
+
   const handleSubmitFeedback = () => {
     setFeedbackSubmitted(true)
     toast({
@@ -121,6 +148,9 @@ export default function OrderTrackingPage() {
       description: `Thank you for your ${ratingStars}-star rating of Luft Main Dining!`,
     })
   }
+
+
+
 
 
   const handleStartPayment = () => {
@@ -524,12 +554,71 @@ export default function OrderTrackingPage() {
             })}
           </div>
         </CardContent>
-
       </Card>
 
+      {/* 1-Click Call Waiter Service Bell Widget */}
+      <Card className="royal-card border border-amber-500/30 bg-zinc-950 overflow-hidden shadow-2xl">
 
+        <CardHeader className="bg-gradient-to-r from-amber-950/40 via-zinc-900 to-amber-950/40 border-b border-amber-500/20 pb-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Bell className="h-5 w-5 text-amber-400 animate-bounce" />
+                <CardTitle className="text-xl font-extrabold text-zinc-100">
+                  1-Click "Call Waiter" Service Bell
+                </CardTitle>
+              </div>
+              <p className="text-xs text-zinc-400">
+                Tap any button for instant table assistance from your assigned floor server
+              </p>
+            </div>
+            {activeWaiterRequest && (
+              <Badge className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-black uppercase tracking-wider px-3 py-1 animate-pulse">
+                Active: {activeWaiterRequest}
+              </Badge>
+            )}
+          </div>
+        </CardHeader>
 
+        <CardContent className="p-5 sm:p-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <Button
+              onClick={() => handleCallWaiterRequest('Bring Water 💧')}
+              variant="outline"
+              className="h-16 flex flex-col items-center justify-center gap-1.5 border-amber-500/30 bg-zinc-900/80 hover:bg-amber-500/20 hover:border-amber-400 text-zinc-100 rounded-2xl transition-all shadow-md group"
+            >
+              <Droplet className="h-5 w-5 text-sky-400 group-hover:scale-110 transition-transform" />
+              <span className="text-xs font-extrabold">Bring Water</span>
+            </Button>
 
+            <Button
+              onClick={() => handleCallWaiterRequest('Extra Napkins 🧻')}
+              variant="outline"
+              className="h-16 flex flex-col items-center justify-center gap-1.5 border-amber-500/30 bg-zinc-900/80 hover:bg-amber-500/20 hover:border-amber-400 text-zinc-100 rounded-2xl transition-all shadow-md group"
+            >
+              <FileText className="h-5 w-5 text-amber-400 group-hover:scale-110 transition-transform" />
+              <span className="text-xs font-extrabold">Extra Napkins</span>
+            </Button>
+
+            <Button
+              onClick={() => handleCallWaiterRequest('Request Cutlery 🍴')}
+              variant="outline"
+              className="h-16 flex flex-col items-center justify-center gap-1.5 border-amber-500/30 bg-zinc-900/80 hover:bg-amber-500/20 hover:border-amber-400 text-zinc-100 rounded-2xl transition-all shadow-md group"
+            >
+              <UtensilsCrossed className="h-5 w-5 text-emerald-400 group-hover:scale-110 transition-transform" />
+              <span className="text-xs font-extrabold">Request Cutlery</span>
+            </Button>
+
+            <Button
+              onClick={() => handleCallWaiterRequest('Call Host to Table 🙋')}
+              className="h-16 flex flex-col items-center justify-center gap-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:brightness-110 text-zinc-950 font-black rounded-2xl shadow-lg shadow-amber-500/20 transition-all group"
+            >
+              <UserCheck className="h-5 w-5 text-zinc-950 group-hover:scale-110 transition-transform" />
+              <span className="text-xs font-black">Call Host to Table</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Itemized Receipt Breakdown */}
       <Card className="royal-card border border-amber-500/20">

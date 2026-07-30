@@ -1,4 +1,7 @@
+'use client'
+
 import React, { useState } from 'react'
+
 import { ManagerHeader } from '@/components/manager/ManagerHeader'
 import { useManagerStore } from '@/lib/managerStore'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'

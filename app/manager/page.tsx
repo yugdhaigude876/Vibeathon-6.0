@@ -417,11 +417,14 @@ export default function ManagerPage() {
     try {
       setUpdatingId(orderId)
 
-      // 1. Update Supabase DB
-      await supabase
-        .from('orders')
-        .update({ status: nextStatus })
-        .eq('id', orderId)
+      // 1. Update Supabase DB if orderId is a valid UUID
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId)
+      if (isUuid) {
+        await supabase
+          .from('orders')
+          .update({ status: nextStatus })
+          .eq('id', orderId)
+      }
 
       // 2. Update Staff Store
       try {
@@ -429,6 +432,7 @@ export default function ManagerPage() {
       } catch (e) {
         console.warn('StaffStore status update error:', e)
       }
+
 
       // 3. Update Local Storage for cross-tab sync
       try {

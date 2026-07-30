@@ -46,6 +46,15 @@
 - **Luft Menu Stock Control**: Live `In Stock` / `Out of Stock` toggles connected directly to the Luft Main Dining (Bandra) menu.
 - **Table Occupancy & Heatmap**: 12 tables displaying live floor statuses (*Available, Occupied, Reserved*).
 
+### 🔔 6. 1-Click "Call Waiter" Service Bell Widget
+- **Instant Table Assistance (`/orders/[id]`)**: Customers tracking their active dining order can tap 1-click assistance buttons:
+  - 💧 **Bring Water**
+  - 🧻 **Extra Napkins**
+  - 🍴 **Request Cutlery**
+  - 🙋 **Call Host to Table**
+- **Real-Time Staff Broadcast**: Instantly broadcasts a priority request alert via `BroadcastChannel` to the Waiter Dashboard (`/staff/waiter`).
+
+
 ---
 
 ## 🚀 Live Demo & Demo Accounts
