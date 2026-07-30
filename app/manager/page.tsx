@@ -222,7 +222,9 @@ export default function ManagerPage() {
         if (localOrdersRaw) {
           const parsed = JSON.parse(localOrdersRaw)
           parsed.forEach((lOrd: any) => {
+            if (lOrd.id && String(lOrd.id).includes('1785')) return
             const targetDisplay = (lOrd.displayId || lOrd.id || '').toLowerCase()
+
             const existingIdx = merged.findIndex(
               (m) =>
                 m.id.toLowerCase() === targetDisplay ||

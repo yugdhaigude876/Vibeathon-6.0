@@ -66,6 +66,9 @@ export function useRealtimeOrders(customerId?: string) {
           if (localOrdersRaw) {
             const parsedLocal = JSON.parse(localOrdersRaw)
             parsedLocal.forEach((lOrd: any) => {
+              // Ignore legacy test orders containing 1785
+              if (lOrd.id && String(lOrd.id).includes('1785')) return
+
               if (!fetchedOrders.some((o) => o.id === lOrd.id || (o as any).displayId === lOrd.displayId)) {
                 fetchedOrders.unshift({
                   id: lOrd.id,
@@ -88,6 +91,7 @@ export function useRealtimeOrders(customerId?: string) {
         } catch (e) {
           console.warn('Local storage orders sync warning:', e)
         }
+
 
         setOrders(fetchedOrders)
       } catch (err: any) {
