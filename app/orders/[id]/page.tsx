@@ -386,66 +386,82 @@ export default function OrderTrackingPage() {
         </div>
       </div>
 
-      {/* Royal Progress Stepper */}
-      <Card className="royal-card border border-amber-500/30 overflow-hidden">
+      {/* Preparation Progress Stepper with Dotted Connecting Lines */}
+      <Card className="royal-card border border-amber-500/30 overflow-hidden shadow-2xl bg-zinc-950">
         <CardHeader className="bg-gradient-to-r from-amber-950/40 via-zinc-900 to-amber-950/40 border-b border-amber-500/20 pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-amber-400 animate-pulse" />
-              <CardTitle className="text-lg font-bold text-zinc-100">
-                Preparation Progress
-              </CardTitle>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-amber-400 animate-pulse" />
+                <CardTitle className="text-xl font-extrabold text-zinc-100">
+                  Preparation Progress
+                </CardTitle>
+              </div>
+              <p className="text-xs text-zinc-400">
+                Real-time kitchen preparation status
+              </p>
             </div>
-            <Badge className="bg-amber-500/20 text-amber-300 border border-amber-500/40 px-3 py-1 uppercase text-xs tracking-wider font-semibold">
+            <Badge
+              className={`px-4 py-1.5 uppercase text-xs tracking-wider font-black border self-start sm:self-center rounded-full ${
+                currentStepIndex === 3 || (order.status || '').toLowerCase() === 'completed' || (order.status || '').toLowerCase() === 'delivered'
+                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.3)]'
+                  : 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-[0_0_15px_rgba(212,175,55,0.2)]'
+              }`}
+            >
               {order.status}
             </Badge>
           </div>
         </CardHeader>
 
-        <CardContent className="p-6 sm:p-8">
+        <CardContent className="p-6 sm:p-10">
           {/* Stepper Timeline Container */}
           <div className="relative">
-            {/* Horizontal connection line for desktop */}
-            <div className="hidden md:block absolute top-7 left-12 right-12 h-1 bg-zinc-800 rounded-full z-0">
-              <div
-                className="h-full bg-gradient-to-r from-amber-600 to-amber-400 rounded-full transition-all duration-700 ease-in-out"
-                style={{
-                  width: `${(Math.max(0, currentStepIndex) / (ORDER_STEPS.length - 1)) * 100}%`,
-                }}
-              />
-            </div>
+            {/* Desktop Horizontal Dotted Line (hidden on mobile) */}
+            <div className="hidden md:block absolute top-7 left-[12.5%] right-[12.5%] h-0.5 border-t-2 border-dashed border-amber-500/50 z-0" />
 
-            {/* Stepper items grid */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 relative z-10">
+            {/* Mobile Vertical Dotted Line (hidden on desktop) */}
+            <div className="md:hidden absolute top-7 bottom-7 left-7 w-0.5 border-l-2 border-dashed border-amber-500/50 z-0" />
+
+            {/* Nodes Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-4 relative z-10">
               {ORDER_STEPS.map((step, idx) => {
                 const Icon = step.icon
                 const isPassed = idx < currentStepIndex
                 const isCurrent = idx === currentStepIndex
-                const isUpcoming = idx > currentStepIndex
+                const isFinalStep = idx === 3
+                const isFullyCompleted = currentStepIndex === 3
 
                 return (
                   <div
                     key={step.key}
-                    className={`flex md:flex-col items-center gap-4 md:gap-3 md:text-center transition-all ${
+                    className={`flex md:flex-col items-start md:items-center gap-4 md:gap-3 md:text-center transition-all ${
                       isCurrent
-                        ? 'scale-105 opacity-100'
+                        ? 'opacity-100'
                         : isPassed
-                        ? 'opacity-90'
+                        ? 'opacity-95'
                         : 'opacity-40 grayscale'
                     }`}
                   >
-                    {/* Circle Icon Container */}
+                    {/* Circle Node Icon */}
                     <div
                       className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300 ${
-                        isCurrent
-                          ? 'border-amber-400 bg-amber-500/20 text-amber-300 shadow-lg shadow-amber-500/30 ring-4 ring-amber-500/20'
+                        isFullyCompleted && isFinalStep
+                          ? 'border-emerald-400 bg-gradient-to-br from-emerald-400 to-emerald-600 text-zinc-950 shadow-[0_0_20px_rgba(16,185,129,0.4)] ring-4 ring-emerald-500/20 font-black'
+                          : isCurrent
+                          ? 'border-amber-400 bg-gradient-to-br from-[#D4AF37] via-[#F1C85C] to-[#B68A25] text-zinc-950 shadow-[0_0_25px_rgba(212,175,55,0.45)] ring-4 ring-amber-500/20 font-black scale-110'
                           : isPassed
-                          ? 'border-amber-500 bg-amber-600 text-zinc-950 shadow-md shadow-amber-600/20'
-                          : 'border-zinc-700 bg-zinc-900 text-zinc-500'
+                          ? 'border-amber-400 bg-gradient-to-br from-amber-500 to-amber-600 text-zinc-950 shadow-md shadow-amber-500/20 font-bold'
+                          : 'border-zinc-700 bg-zinc-950 text-zinc-500'
                       }`}
                     >
-                      <Icon className="h-6 w-6" />
-                      {isCurrent && (
+                      {isPassed || (isFullyCompleted && isFinalStep) ? (
+                        <Check className="h-6 w-6 stroke-[3]" />
+                      ) : (
+                        <Icon className="h-6 w-6" />
+                      )}
+
+                      {/* Active Glowing Ping Dot for current step */}
+                      {isCurrent && !isFullyCompleted && (
                         <span className="absolute -top-1 -right-1 flex h-4 w-4">
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
                           <span className="relative inline-flex rounded-full h-4 w-4 bg-amber-500"></span>
@@ -454,10 +470,12 @@ export default function OrderTrackingPage() {
                     </div>
 
                     {/* Step Titles */}
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 pt-1 md:pt-0">
                       <h4
-                        className={`text-sm font-bold tracking-tight ${
-                          isCurrent
+                        className={`text-base font-extrabold tracking-tight ${
+                          isFullyCompleted && isFinalStep
+                            ? 'text-emerald-400'
+                            : isCurrent
                             ? 'text-amber-300'
                             : isPassed
                             ? 'text-zinc-200'
@@ -466,7 +484,7 @@ export default function OrderTrackingPage() {
                       >
                         {step.label}
                       </h4>
-                      <p className="text-xs text-zinc-400 mt-0.5 leading-snug">
+                      <p className="text-xs text-zinc-400 mt-1 leading-snug">
                         {step.subLabel}
                       </p>
                     </div>
@@ -477,6 +495,10 @@ export default function OrderTrackingPage() {
           </div>
         </CardContent>
       </Card>
+
+
+
+
 
       {/* Itemized Receipt Breakdown */}
       <Card className="royal-card border border-amber-500/20">
