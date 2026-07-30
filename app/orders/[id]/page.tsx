@@ -21,7 +21,11 @@ import {
   Banknote,
   ShieldCheck,
   Check,
+  Star,
+  ThumbsUp,
+  MessageSquare,
 } from 'lucide-react'
+
 import { createClient } from '@/lib/supabase'
 import { useToast } from '@/hooks/use-toast'
 import { useRoleGuard } from '@/hooks/useRoleGuard'
@@ -104,6 +108,20 @@ export default function OrderTrackingPage() {
   const [isProcessingPayment, setIsProcessingPayment] = useState<boolean>(false)
   const [payCountdown, setPayCountdown] = useState<number>(5)
   const [isPaid, setIsPaid] = useState<boolean>(false)
+
+  // Customer Star Rating Feedback State
+  const [ratingStars, setRatingStars] = useState<number>(5)
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState<boolean>(false)
+  const [feedbackNotes, setFeedbackNotes] = useState<string>('')
+
+  const handleSubmitFeedback = () => {
+    setFeedbackSubmitted(true)
+    toast({
+      title: 'Feedback Received! ⭐️',
+      description: `Thank you for your ${ratingStars}-star rating of Luft Main Dining!`,
+    })
+  }
+
 
   const handleStartPayment = () => {
     setIsProcessingPayment(true)
@@ -618,6 +636,83 @@ export default function OrderTrackingPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Customer 5-Star Dining Rating Card */}
+      {(isPaid || currentStepIndex === 3 || (order.status || '').toLowerCase() === 'completed') && (
+        <Card className="royal-card border border-amber-500/40 bg-zinc-950 overflow-hidden shadow-2xl">
+          <CardHeader className="bg-gradient-to-r from-amber-950/40 via-zinc-900 to-amber-950/40 border-b border-amber-500/20 pb-4">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-amber-400" />
+              <CardTitle className="text-xl font-extrabold text-zinc-100">
+                Rate Your Royal Dining Experience
+              </CardTitle>
+            </div>
+            <p className="text-xs text-zinc-400">
+              How was your feast at Luft Main Dining (Bandra)?
+            </p>
+          </CardHeader>
+
+          <CardContent className="p-6 space-y-5">
+            {feedbackSubmitted ? (
+              <div className="rounded-2xl border border-emerald-500/40 bg-emerald-950/30 p-6 text-center space-y-2">
+                <div className="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center mx-auto text-emerald-400">
+                  <CheckCircle2 className="h-6 w-6" />
+                </div>
+                <h4 className="text-lg font-extrabold text-emerald-300">Thank You for Your Feedback! 🥂</h4>
+                <p className="text-xs text-zinc-300">
+                  Your <strong className="text-amber-400 font-bold">{ratingStars}-Star Rating</strong> has been shared with our Master Chef and Executive Management.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Interactive 5 Star Selector */}
+                <div className="flex items-center justify-center gap-3 py-2">
+                  {[1, 2, 3, 4, 5].map((starNum) => (
+                    <button
+                      key={starNum}
+                      type="button"
+                      onClick={() => setRatingStars(starNum)}
+                      className="transition-transform hover:scale-125 focus:outline-none"
+                    >
+                      <Star
+                        className={`h-9 w-9 ${
+                          starNum <= ratingStars
+                            ? 'fill-amber-400 text-amber-400 drop-shadow-[0_0_12px_rgba(251,191,36,0.6)]'
+                            : 'text-zinc-700 hover:text-amber-400/50'
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+
+                {/* Quick Feedback Note Input */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                    <MessageSquare className="h-3.5 w-3.5 text-amber-400" />
+                    Share your thoughts (Optional)
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="e.g. The Butter Chicken Tacos and Queso De Crema were extraordinary!"
+                    value={feedbackNotes}
+                    onChange={(e) => setFeedbackNotes(e.target.value)}
+                    className="w-full rounded-2xl border border-white/10 bg-zinc-900/80 p-3.5 text-xs text-zinc-100 placeholder:text-zinc-500 focus:border-amber-400 focus:outline-none"
+                  />
+                </div>
+
+                {/* Submit Feedback Button */}
+                <Button
+                  onClick={handleSubmitFeedback}
+                  className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:brightness-110 text-zinc-950 font-extrabold text-xs rounded-2xl h-12 shadow-lg shadow-amber-500/20"
+                >
+                  <ThumbsUp className="h-4 w-4 mr-2" /> Submit Review ({ratingStars} Stars)
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
 
       {/* Bottom Action Footer */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
