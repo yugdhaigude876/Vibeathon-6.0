@@ -414,27 +414,21 @@ export default function OrderTrackingPage() {
         </CardHeader>
 
         <CardContent className="p-6 sm:p-10">
-          {/* Stepper Timeline Container */}
-          <div className="relative">
-            {/* Desktop Horizontal Dotted Line (hidden on mobile) */}
-            <div className="hidden md:block absolute top-7 left-[12.5%] right-[12.5%] h-0.5 border-t-2 border-dashed border-amber-500/50 z-0" />
+          {/* Stepper Timeline with Inline Dotted Line Connectors */}
+          <div className="flex flex-col md:flex-row md:items-start justify-between gap-2 md:gap-0">
+            {ORDER_STEPS.map((step, idx) => {
+              const Icon = step.icon
+              const isPassed = idx < currentStepIndex
+              const isCurrent = idx === currentStepIndex
+              const isFinalStep = idx === 3
+              const isFullyCompleted = currentStepIndex === 3
+              const isLast = idx === ORDER_STEPS.length - 1
 
-            {/* Mobile Vertical Dotted Line (hidden on desktop) */}
-            <div className="md:hidden absolute top-7 bottom-7 left-7 w-0.5 border-l-2 border-dashed border-amber-500/50 z-0" />
-
-            {/* Nodes Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-4 relative z-10">
-              {ORDER_STEPS.map((step, idx) => {
-                const Icon = step.icon
-                const isPassed = idx < currentStepIndex
-                const isCurrent = idx === currentStepIndex
-                const isFinalStep = idx === 3
-                const isFullyCompleted = currentStepIndex === 3
-
-                return (
+              return (
+                <React.Fragment key={step.key}>
+                  {/* Step Node & Text */}
                   <div
-                    key={step.key}
-                    className={`flex md:flex-col items-start md:items-center gap-4 md:gap-3 md:text-center transition-all ${
+                    className={`flex md:flex-col items-center md:items-center gap-4 md:gap-3 md:text-center transition-all ${
                       isCurrent
                         ? 'opacity-100'
                         : isPassed
@@ -444,7 +438,7 @@ export default function OrderTrackingPage() {
                   >
                     {/* Circle Node Icon */}
                     <div
-                      className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300 ${
+                      className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300 z-10 ${
                         isFullyCompleted && isFinalStep
                           ? 'border-emerald-400 bg-gradient-to-br from-emerald-400 to-emerald-600 text-zinc-950 shadow-[0_0_20px_rgba(16,185,129,0.4)] ring-4 ring-emerald-500/20 font-black'
                           : isCurrent
@@ -470,7 +464,7 @@ export default function OrderTrackingPage() {
                     </div>
 
                     {/* Step Titles */}
-                    <div className="flex-1 min-w-0 pt-1 md:pt-0">
+                    <div className="flex-1 min-w-0 md:max-w-[150px]">
                       <h4
                         className={`text-base font-extrabold tracking-tight ${
                           isFullyCompleted && isFinalStep
@@ -489,11 +483,30 @@ export default function OrderTrackingPage() {
                       </p>
                     </div>
                   </div>
-                )
-              })}
-            </div>
+
+                  {/* Dotted Line Connector between Step Nodes */}
+                  {!isLast && (
+                    <div className="flex md:flex-1 items-center justify-start md:justify-center my-2 md:my-0 md:mt-7">
+                      {/* Desktop Horizontal Dotted Line */}
+                      <div
+                        className={`hidden md:block w-full border-t-2 border-dashed transition-colors ${
+                          isPassed ? 'border-amber-400/80' : 'border-zinc-700/80'
+                        }`}
+                      />
+                      {/* Mobile Vertical Dotted Line */}
+                      <div
+                        className={`md:hidden h-10 border-l-2 border-dashed ml-7 transition-colors ${
+                          isPassed ? 'border-amber-400/80' : 'border-zinc-700/80'
+                        }`}
+                      />
+                    </div>
+                  )}
+                </React.Fragment>
+              )
+            })}
           </div>
         </CardContent>
+
       </Card>
 
 
