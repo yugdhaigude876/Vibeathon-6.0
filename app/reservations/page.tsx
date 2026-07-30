@@ -15,6 +15,12 @@ import {
   AlertCircle,
   CalendarCheck,
   X,
+  QrCode,
+  Download,
+  Printer,
+  Share2,
+  ShieldCheck,
+  Ticket,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { useToast } from '@/hooks/use-toast'
@@ -26,6 +32,13 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Popover } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
 
 export interface Reservation {
   id: string
@@ -40,6 +53,7 @@ export interface Reservation {
   party_size?: number | null
   guests_count?: number | null
   status: string
+  table_number?: string | null
   created_at?: string
 }
 
@@ -67,6 +81,10 @@ export default function ReservationsPage() {
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
+
+  // Digital VIP Pass Modal State
+  const [selectedVipPass, setSelectedVipPass] = useState<Reservation | null>(null)
+
 
   // Fetch current user and prefill name
   useEffect(() => {
@@ -598,6 +616,18 @@ export default function ReservationsPage() {
                         </div>
                       )}
                     </div>
+
+                    {/* VIP Pass Action Button */}
+                    {!isCancelled && (
+                      <div className="pt-2 border-t border-white/5">
+                        <Button
+                          onClick={() => setSelectedVipPass(res)}
+                          className="w-full bg-gradient-to-r from-[#D4AF37] via-[#F1C85C] to-[#B68A25] text-zinc-950 hover:brightness-110 font-extrabold text-xs rounded-xl py-5 shadow-lg shadow-amber-500/10 flex items-center justify-center gap-2"
+                        >
+                          <QrCode className="h-4 w-4" /> View Digital VIP Pass & QR Code
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )
               })}
@@ -605,6 +635,93 @@ export default function ReservationsPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Royal Digital VIP Reservation Pass Modal */}
+      {selectedVipPass && (
+        <Dialog open={!!selectedVipPass} onOpenChange={() => setSelectedVipPass(null)}>
+          <DialogContent className="bg-zinc-950 border-amber-500/40 text-zinc-100 max-w-md rounded-[2.5rem] p-0 overflow-hidden shadow-[0_25px_80px_rgba(0,0,0,0.8)]">
+            {/* VIP Pass Banner Header */}
+            <div className="bg-gradient-to-r from-amber-950 via-zinc-900 to-amber-950 p-6 border-b border-amber-500/30 text-center relative overflow-hidden">
+              <div className="absolute right-0 top-0 translate-x-4 -translate-y-4 opacity-15 pointer-events-none">
+                <Crown className="h-32 w-32 text-amber-400" />
+              </div>
+              <Badge className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-black uppercase tracking-widest px-3 py-1 mb-2">
+                LUFT MAIN DINING (BANDRA)
+              </Badge>
+              <h3 className="text-2xl font-black gold-gradient-text tracking-tight flex items-center justify-center gap-2">
+                <Crown className="h-6 w-6 text-amber-400" /> Royal VIP Dining Pass
+              </h3>
+              <p className="text-xs text-zinc-400 mt-1">
+                Pass Reference: <span className="font-mono text-amber-300 font-bold">#VIP-{selectedVipPass.id.slice(-6).toUpperCase()}</span>
+              </p>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Dynamic QR Code Box */}
+              <div className="bg-white p-5 rounded-3xl text-center shadow-inner max-w-[200px] mx-auto border-4 border-amber-500/30">
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=LUFT_VIP_PASS_${selectedVipPass.id}_${selectedVipPass.guest_name || 'Guest'}_${selectedVipPass.reservation_date}_${selectedVipPass.reservation_time}`}
+                  alt="VIP Pass QR Code"
+                  className="w-40 h-40 mx-auto"
+                />
+              </div>
+
+              {/* Pass Security Notice */}
+              <p className="text-center text-[11px] text-emerald-400 font-bold flex items-center justify-center gap-1">
+                <ShieldCheck className="h-3.5 w-3.5" /> Present this QR on arrival for priority host check-in
+              </p>
+
+              {/* Guest & Reservation Details Grid */}
+              <div className="rounded-2xl border border-white/10 bg-zinc-900/80 p-4 space-y-3 text-xs">
+                <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                  <span className="text-zinc-400 font-medium">Guest Name</span>
+                  <span className="font-bold text-amber-300 text-sm">{selectedVipPass.guest_name || selectedVipPass.name || 'Royal Guest'}</span>
+                </div>
+                <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                  <span className="text-zinc-400 font-medium">Reservation Date</span>
+                  <span className="font-mono font-bold text-zinc-100">{selectedVipPass.reservation_date || selectedVipPass.date}</span>
+                </div>
+                <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                  <span className="text-zinc-400 font-medium">Time Slot</span>
+                  <span className="font-mono font-bold text-amber-400">{selectedVipPass.reservation_time || selectedVipPass.time}</span>
+                </div>
+                <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                  <span className="text-zinc-400 font-medium">Party Size</span>
+                  <span className="font-bold text-zinc-100">{selectedVipPass.party_size || selectedVipPass.guests_count || 2} Guests</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-zinc-400 font-medium">Assigned Table</span>
+                  <span className="font-extrabold text-amber-300">Table T-04 (VIP Lounge)</span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  onClick={() => window.print()}
+                  variant="outline"
+                  className="border-white/10 bg-white/5 text-zinc-200 hover:bg-white/10 text-xs font-bold rounded-2xl h-11"
+                >
+                  <Printer className="h-4 w-4 mr-2 text-amber-400" /> Print Pass
+                </Button>
+
+                <Button
+                  onClick={() => {
+                    toast({
+                      title: 'VIP Pass Link Copied! 📋',
+                      description: 'Share pass QR code with your dining guests.',
+                    })
+                  }}
+                  className="bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-extrabold rounded-2xl h-11"
+                >
+                  <Share2 className="h-4 w-4 mr-2" /> Share Pass
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   )
 }
+

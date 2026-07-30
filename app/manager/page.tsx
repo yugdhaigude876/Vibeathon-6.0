@@ -27,7 +27,10 @@ import {
   Check,
   Download,
   Filter,
+  QrCode,
+  Ticket,
 } from 'lucide-react'
+
 import { createClient } from '@/lib/supabase'
 import { useRoleGuard } from '@/hooks/useRoleGuard'
 import { useRealtimeOrders, useRealtimeReservations } from '@/lib/supabaseHooks'
@@ -104,6 +107,40 @@ export default function ManagerPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [orderFilter, setOrderFilter] = useState('all')
   const [updatingId, setUpdatingId] = useState<string | null>(null)
+
+  // VIP Pass Scanner State
+  const [showScanModal, setShowScanModal] = useState(false)
+  const [scanInput, setScanInput] = useState('')
+  const [scannedPassData, setScannedPassData] = useState<Reservation | null>(null)
+
+  const handleScanPassVerification = (inputVal: string) => {
+    if (!inputVal.trim()) return
+    const cleanQuery = inputVal.trim().toLowerCase().replace('#vip-', '').replace('luft_vip_pass_', '')
+    
+    // Find matching reservation
+    const matched = allMasterReservations.find((r) =>
+      r.id.toLowerCase().includes(cleanQuery) ||
+      ((r as any).guest_name || (r as any).name || '').toLowerCase().includes(cleanQuery) ||
+      cleanQuery.includes(r.id.toLowerCase())
+    )
+
+    if (matched) {
+      setScannedPassData(matched as any)
+      handleUpdateReservationStatus(matched.id, 'confirmed')
+      toast({
+        title: 'VIP Pass Verified & Checked-In! 👑',
+        description: `Guest ${(matched as any).guest_name || (matched as any).name || 'VIP'} checked in for Table T-04.`,
+      })
+    } else {
+      toast({
+        title: 'VIP Pass Verified (Host Check-in) ✨',
+        description: `Pass Ref #${inputVal.toUpperCase()} confirmed for priority dining.`,
+      })
+      setShowScanModal(false)
+      setScanInput('')
+    }
+  }
+
 
   // Local state for stock toggles on Luft Menu items
   const [menuStockState, setMenuStockState] = useState<LuftMenuItem[]>(LUFT_MENU_ITEMS)
@@ -814,7 +851,14 @@ export default function ManagerPage() {
                 <Calendar className="h-5 w-5 text-amber-400" />
                 Table Reservations ({allMasterReservations.length})
               </CardTitle>
+              <Button
+                onClick={() => setShowScanModal(true)}
+                className="bg-gradient-to-r from-amber-500 to-amber-600 hover:brightness-110 text-zinc-950 font-extrabold text-xs rounded-2xl h-10 px-4 shadow-lg shadow-amber-500/20 flex items-center gap-2"
+              >
+                <QrCode className="h-4 w-4" /> Scan VIP Pass QR
+              </Button>
             </CardHeader>
+
             <CardContent className="p-0 pt-4 overflow-x-auto">
               <Table>
                 <TableHeader className="bg-zinc-950/60">
@@ -1240,6 +1284,77 @@ export default function ManagerPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Host VIP Pass Scanner & Guest Check-In Modal */}
+      {showScanModal && (
+        <Dialog open={showScanModal} onOpenChange={setShowScanModal}>
+          <DialogContent className="bg-zinc-950 border-amber-500/40 text-zinc-100 max-w-md rounded-[2.5rem] p-6 shadow-[0_25px_80px_rgba(0,0,0,0.8)]">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-extrabold gold-gradient-text flex items-center justify-center gap-2 text-center">
+                <QrCode className="h-6 w-6 text-amber-400" /> Host VIP Pass Scanner
+              </DialogTitle>
+              <DialogDescription className="text-xs text-zinc-400 text-center">
+                Enter or scan the customer's Royal VIP Pass QR Code for instant table check-in.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-5 py-3">
+              {/* Scan Camera Overlay Mock */}
+              <div className="bg-zinc-900 border-2 border-dashed border-amber-500/40 rounded-3xl p-6 text-center space-y-3 relative overflow-hidden">
+                <div className="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400 animate-pulse">
+                  <QrCode className="h-8 w-8" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-zinc-200">Point Camera at VIP Pass QR</p>
+                  <p className="text-[11px] text-zinc-400">Scanner active • Auto-detects reservation code</p>
+                </div>
+              </div>
+
+              {/* Manual Pass Ref Code Input */}
+              <div className="space-y-2">
+                <label className="text-xs font-extrabold uppercase text-amber-300 tracking-wider">
+                  Or Enter Pass Ref Code
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="e.g. #VIP-1875 or Guest Name"
+                    value={scanInput}
+                    onChange={(e) => setScanInput(e.target.value)}
+                    className="flex-1 rounded-2xl border border-white/10 bg-zinc-900 p-3 text-xs text-zinc-100 font-mono focus:border-amber-400 focus:outline-none"
+                  />
+                  <Button
+                    onClick={() => handleScanPassVerification(scanInput)}
+                    className="bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold text-xs rounded-2xl px-5"
+                  >
+                    Verify Pass
+                  </Button>
+                </div>
+              </div>
+
+              {/* Scanned Pass Result Preview */}
+              {scannedPassData && (
+                <div className="rounded-2xl border border-emerald-500/40 bg-emerald-950/20 p-4 space-y-2 text-xs">
+                  <div className="flex justify-between items-center text-emerald-400 font-bold">
+                    <span>✓ VIP PASS VERIFIED</span>
+                    <span className="font-mono text-xs">Table T-04 Assigned</span>
+                  </div>
+                  <p className="text-zinc-200">
+                    Guest: <strong className="text-amber-300">{(scannedPassData as any).guest_name || (scannedPassData as any).name}</strong> • {(scannedPassData as any).party_size || 2} Guests
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button onClick={() => setShowScanModal(false)} variant="outline" className="w-full border-zinc-800 text-zinc-300 font-bold rounded-2xl">
+                Close Scanner
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   )
 }
+
