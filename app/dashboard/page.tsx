@@ -16,7 +16,9 @@ import {
   ExternalLink,
   Eye,
   Navigation,
+  CreditCard,
 } from 'lucide-react'
+
 import { createClient } from '@/lib/supabase'
 import { useRoleGuard } from '@/hooks/useRoleGuard'
 import { useCart } from '@/context/CartContext'
@@ -505,11 +507,23 @@ export default function CustomerDashboardPage() {
                     </div>
 
                     {/* Actions Footer */}
-                    <div className="flex items-center gap-2 pt-2 border-t border-zinc-800/80">
+                    <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-zinc-800/80">
                       <Button
                         asChild
                         size="sm"
-                        className="bg-amber-600 hover:bg-amber-500 text-zinc-950 font-bold text-xs flex items-center gap-1.5 shadow-sm"
+                        className="bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-xs flex items-center gap-1.5 shadow-sm"
+                      >
+                        <Link href={`/orders/${order.id}`}>
+                          <CreditCard className="h-3.5 w-3.5" />
+                          Pay Bill
+                        </Link>
+                      </Button>
+
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="outline"
+                        className="border-amber-500/30 text-amber-300 hover:bg-amber-500/10 font-bold text-xs flex items-center gap-1.5"
                       >
                         <Link href={`/orders/${order.id}`}>
                           <Navigation className="h-3.5 w-3.5" />
@@ -533,6 +547,7 @@ export default function CustomerDashboardPage() {
                         size="sm"
                         variant="ghost"
                         onClick={() => handleReorder(order)}
+
                         className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 text-xs ml-auto flex items-center gap-1 font-bold"
                       >
                         <RotateCcw className="h-3.5 w-3.5" />

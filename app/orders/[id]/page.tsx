@@ -16,6 +16,11 @@ import {
   Loader2,
   AlertCircle,
   Receipt,
+  CreditCard,
+  QrCode,
+  Banknote,
+  ShieldCheck,
+  Check,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { useToast } from '@/hooks/use-toast'
@@ -92,6 +97,38 @@ export default function OrderTrackingPage() {
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
   const [isHelpOpen, setIsHelpOpen] = useState<boolean>(false)
+
+  // Customer Pay Bill State
+  const [isPayModalOpen, setIsPayModalOpen] = useState<boolean>(false)
+  const [payMethod, setPayMethod] = useState<'upi' | 'card' | 'cash'>('upi')
+  const [isProcessingPayment, setIsProcessingPayment] = useState<boolean>(false)
+  const [payCountdown, setPayCountdown] = useState<number>(5)
+  const [isPaid, setIsPaid] = useState<boolean>(false)
+
+  const handleStartPayment = () => {
+    setIsProcessingPayment(true)
+    setPayCountdown(5)
+
+    const timer = setInterval(() => {
+      setPayCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer)
+          setIsProcessingPayment(false)
+          setIsPayModalOpen(false)
+          setIsPaid(true)
+          setOrder((prevOrd) => (prevOrd ? { ...prevOrd, status: 'completed' } : null))
+          
+          toast({
+            title: 'Payment Approved! 🎉',
+            description: `Payment of ₹${totalAmount.toFixed(2)} confirmed successfully. Thank you for dining with us!`,
+          })
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+  }
+
 
   // Fetch initial order details
   const fetchOrder = async () => {
@@ -512,6 +549,37 @@ export default function OrderTrackingPage() {
                 ₹{totalAmount.toFixed(2)}
               </span>
             </div>
+
+            {/* Pay Bill Action Bar for Completed / Active Orders */}
+            <div className="pt-4 border-t border-amber-500/20">
+              {isPaid ? (
+                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-center space-y-1">
+                  <div className="flex items-center justify-center gap-2 text-emerald-400 font-extrabold text-base">
+                    <CheckCircle2 className="h-5 w-5" /> BILL PAID & SETTLED
+                  </div>
+                  <p className="text-xs text-zinc-300">
+                    Payment of <strong className="text-emerald-300 font-mono">₹{totalAmount.toFixed(2)}</strong> received. Receipt saved to your account.
+                  </p>
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-950/40 via-zinc-900 to-amber-950/40 p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div>
+                    <h4 className="text-base font-extrabold text-zinc-100 flex items-center gap-2">
+                      <Receipt className="h-5 w-5 text-amber-400" /> Settle Royal Bill
+                    </h4>
+                    <p className="text-xs text-zinc-400 mt-0.5">
+                      Pay via UPI QR, Credit/Debit Card, or Cash to table waiter.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => setIsPayModalOpen(true)}
+                    className="w-full sm:w-auto bg-gradient-to-r from-[#D4AF37] via-[#F1C85C] to-[#B68A25] text-zinc-950 font-black text-sm px-6 py-6 rounded-2xl shadow-[0_10px_30px_rgba(212,175,55,0.3)] hover:brightness-110"
+                  >
+                    <CreditCard className="h-4 w-4 mr-2" /> Pay ₹{totalAmount.toFixed(2)} Now
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -528,6 +596,15 @@ export default function OrderTrackingPage() {
           </Link>
         </Button>
 
+        {!isPaid && (
+          <Button
+            onClick={() => setIsPayModalOpen(true)}
+            className="w-full sm:w-auto bg-amber-500 text-zinc-950 hover:bg-amber-400 font-extrabold"
+          >
+            <CreditCard className="h-4 w-4 mr-2" /> Pay Bill (₹{totalAmount.toFixed(2)})
+          </Button>
+        )}
+
         <Button
           onClick={() => setIsHelpOpen(true)}
           className="w-full sm:w-auto bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800"
@@ -535,6 +612,128 @@ export default function OrderTrackingPage() {
           <HelpCircle className="h-4 w-4 mr-2 text-amber-400" /> Need Assistance?
         </Button>
       </div>
+
+      {/* Pay Bill Gateway Modal with 5-Second Confirmation */}
+      <Dialog open={isPayModalOpen} onOpenChange={setIsPayModalOpen}>
+        <DialogContent className="bg-zinc-950 border-amber-500/30 text-zinc-50 sm:max-w-md rounded-[2.5rem] p-6">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-extrabold gold-gradient-text flex items-center justify-center gap-2 text-center">
+              <Crown className="h-6 w-6 text-amber-400" /> Settle Order Bill
+            </DialogTitle>
+            <DialogDescription className="text-xs text-zinc-400 text-center">
+              Total Amount Payable: <strong className="text-amber-300 font-mono text-sm">₹{totalAmount.toFixed(2)}</strong>
+            </DialogDescription>
+          </DialogHeader>
+
+          {isProcessingPayment ? (
+            <div className="py-8 text-center space-y-4">
+              <div className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-amber-500/10 border border-amber-500/30">
+                <Loader2 className="h-10 w-10 animate-spin text-amber-400" />
+                <span className="absolute font-mono text-sm font-black text-amber-300">{payCountdown}s</span>
+              </div>
+              <div className="space-y-1">
+                <Badge className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] uppercase font-bold px-3 py-1">
+                  SECURE BANK GATEWAY
+                </Badge>
+                <h4 className="text-base font-bold text-zinc-100">Verifying Payment Signal...</h4>
+                <p className="text-xs text-zinc-400">
+                  Payment confirmation will close automatically within <strong className="text-amber-300">{payCountdown}s</strong>.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-5 pt-2">
+              {/* Payment Method Selector */}
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  variant={payMethod === 'upi' ? 'default' : 'outline'}
+                  onClick={() => setPayMethod('upi')}
+                  className={`h-12 text-xs font-bold rounded-2xl flex flex-col items-center justify-center gap-1 ${
+                    payMethod === 'upi' ? 'bg-amber-500 text-zinc-950' : 'border-white/10 text-zinc-300'
+                  }`}
+                >
+                  <QrCode className="h-4 w-4" /> UPI QR
+                </Button>
+
+                <Button
+                  variant={payMethod === 'card' ? 'default' : 'outline'}
+                  onClick={() => setPayMethod('card')}
+                  className={`h-12 text-xs font-bold rounded-2xl flex flex-col items-center justify-center gap-1 ${
+                    payMethod === 'card' ? 'bg-amber-500 text-zinc-950' : 'border-white/10 text-zinc-300'
+                  }`}
+                >
+                  <CreditCard className="h-4 w-4" /> Card
+                </Button>
+
+                <Button
+                  variant={payMethod === 'cash' ? 'default' : 'outline'}
+                  onClick={() => setPayMethod('cash')}
+                  className={`h-12 text-xs font-bold rounded-2xl flex flex-col items-center justify-center gap-1 ${
+                    payMethod === 'cash' ? 'bg-amber-500 text-zinc-950' : 'border-white/10 text-zinc-300'
+                  }`}
+                >
+                  <Banknote className="h-4 w-4" /> Cash
+                </Button>
+              </div>
+
+              {payMethod === 'upi' && (
+                <div className="bg-zinc-900 border border-white/10 p-4 rounded-3xl text-center space-y-3">
+                  <div className="bg-white p-3 rounded-2xl inline-block mx-auto">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=upi://pay?pa=luft@icici&pn=LuftDining&am=${totalAmount}`}
+                      alt="UPI QR Code"
+                      className="w-36 h-36 mx-auto"
+                    />
+                  </div>
+                  <p className="text-xs text-zinc-400 font-mono">luft@icici • ₹{totalAmount.toFixed(2)}</p>
+                </div>
+              )}
+
+              {payMethod === 'card' && (
+                <div className="bg-zinc-900 border border-white/10 p-4 rounded-3xl space-y-3 text-xs">
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase font-bold text-zinc-400">Card Number</label>
+                    <div className="p-3 bg-zinc-950 border border-white/10 rounded-xl font-mono text-zinc-200">
+                      •••• •••• •••• 4242
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-[10px] uppercase font-bold text-zinc-400">Expiry</label>
+                      <div className="p-2.5 bg-zinc-950 border border-white/10 rounded-xl font-mono text-zinc-200">
+                        12/28
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] uppercase font-bold text-zinc-400">CVV</label>
+                      <div className="p-2.5 bg-zinc-950 border border-white/10 rounded-xl font-mono text-zinc-200">
+                        •••
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {payMethod === 'cash' && (
+                <div className="bg-zinc-900 border border-white/10 p-4 rounded-3xl text-center space-y-2">
+                  <Banknote className="h-8 w-8 text-amber-400 mx-auto" />
+                  <h4 className="text-sm font-bold text-zinc-100">Pay Cash to Table Waiter</h4>
+                  <p className="text-xs text-zinc-400">
+                    Hand cash to your assigned waiter or pay directly at the cashier register.
+                  </p>
+                </div>
+              )}
+
+              <Button
+                onClick={handleStartPayment}
+                className="w-full py-6 bg-gradient-to-r from-[#D4AF37] via-[#F1C85C] to-[#B68A25] text-zinc-950 font-black uppercase text-sm rounded-2xl shadow-[0_10px_30px_rgba(212,175,55,0.3)] hover:brightness-110"
+              >
+                Confirm & Pay ₹{totalAmount.toFixed(2)}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Assistance Dialog / Modal */}
       <Dialog open={isHelpOpen} onOpenChange={setIsHelpOpen}>
@@ -547,6 +746,7 @@ export default function OrderTrackingPage() {
               We are at your service. Select how you would like assistance with Order #{order.id.slice(0, 8)}.
             </DialogDescription>
           </DialogHeader>
+
 
           <div className="space-y-3 py-4">
             <Button
