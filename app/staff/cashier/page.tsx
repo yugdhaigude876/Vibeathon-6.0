@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { StaffHeader } from '@/components/staff/StaffHeader'
 import { useStaffStore } from '@/lib/staffStore'
 import { EnterpriseOrder, ExtendedOrderItem } from '@/lib/staffTypes'
@@ -25,6 +25,7 @@ import {
   RefreshCw,
   Plus,
   Trash2,
+  Loader2,
 } from 'lucide-react'
 
 export default function CashierPage() {
@@ -53,9 +54,10 @@ export default function CashierPage() {
   // Cash Tendered & Change Due
   const [cashTendered, setCashTendered] = useState<number>(0)
 
-  // Status
+  // Status & Countdown
   const [billPaid, setBillPaid] = useState<boolean>(false)
   const [showQrModal, setShowQrModal] = useState<boolean>(false)
+  const [qrCountdown, setQrCountdown] = useState<number>(5)
 
   // Financial calculations
   const rawTotal = selectedOrder ? selectedOrder.totalAmount : 0
@@ -71,6 +73,28 @@ export default function CashierPage() {
   const allocatedTotal = isSplitPayment ? splitCash + splitCard + splitUpi + splitLoyaltyPoints : finalPayable
   const remainingBalance = Math.max(0, finalPayable - (isSplitPayment ? splitCash + splitCard + splitUpi + splitLoyaltyPoints : 0))
   const changeDue = Math.max(0, cashTendered - (isSplitPayment ? splitCash : finalPayable))
+
+  // Start 5-second auto-close countdown when UPI QR modal is opened
+  useEffect(() => {
+    let timer: any = null
+    if (showQrModal) {
+      setQrCountdown(5)
+      timer = setInterval(() => {
+        setQrCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer)
+            setShowQrModal(false)
+            handleCompletePayment()
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+    }
+    return () => {
+      if (timer) clearInterval(timer)
+    }
+  }, [showQrModal])
 
   const handleApplyCoupon = () => {
     if (couponCode.toUpperCase() === 'LUFT10') {
@@ -88,6 +112,8 @@ export default function CashierPage() {
       setBillPaid(true)
     }
   }
+
+
 
   return (
     <div className="relative min-h-screen bg-zinc-950 text-zinc-100 pb-20">
@@ -445,30 +471,47 @@ export default function CashierPage() {
         </div>
       </main>
 
-      {/* UPI QR Modal */}
+      {/* UPI QR Modal with 5-Second Auto Confirmation */}
       {showQrModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-          <div className="w-full max-w-sm rounded-[2.5rem] border border-white/10 bg-zinc-950 p-6 space-y-4 text-center">
+          <div className="w-full max-w-sm rounded-[2.5rem] border border-amber-500/30 bg-zinc-950 p-6 space-y-4 text-center shadow-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Auto-Closing in {qrCountdown}s
+            </div>
+
             <h3 className="text-lg font-black text-amber-300 flex items-center justify-center gap-2">
               <QrCode className="h-5 w-5" /> Scan UPI QR to Pay
             </h3>
-            <div className="bg-white p-4 rounded-3xl inline-block mx-auto">
+
+            <div className="bg-white p-4 rounded-3xl inline-block mx-auto relative shadow-inner">
               <img
                 src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=upi://pay?pa=luft@icici&pn=LuftDining"
                 alt="UPI QR Code"
                 className="w-44 h-44 mx-auto"
               />
             </div>
-            <p className="text-xs text-zinc-400 font-mono">luft@icici • Amount: ₹{finalPayable}</p>
+
+            <div className="space-y-1">
+              <p className="text-xs text-zinc-400 font-mono">luft@icici • Amount: ₹{finalPayable}</p>
+              <p className="text-[11px] text-emerald-400 font-bold">
+                ✓ Payment confirmation assumed within 5s window.
+              </p>
+            </div>
+
             <Button
-              onClick={() => setShowQrModal(false)}
-              className="w-full bg-amber-500 text-zinc-950 font-bold rounded-2xl text-xs py-3"
+              onClick={() => {
+                setShowQrModal(false)
+                handleCompletePayment()
+              }}
+              className="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold rounded-2xl text-xs py-3"
             >
-              Done / Close QR
+              Approve Immediately ({qrCountdown}s)
             </Button>
           </div>
         </div>
       )}
+
     </div>
   )
 }

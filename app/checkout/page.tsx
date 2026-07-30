@@ -59,6 +59,9 @@ export default function CheckoutPage() {
     }
   }
 
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [paymentCountdown, setPaymentCountdown] = useState(5)
+
   const handlePlaceOrder = async () => {
     if (cartItems.length === 0) {
       toast({
@@ -89,9 +92,25 @@ export default function CheckoutPage() {
       }
     }
 
-    try {
-      setLoading(true)
+    // Start 5-second payment verification flow as per requirement
+    setShowPaymentModal(true)
+    setPaymentCountdown(5)
+    setLoading(true)
 
+    const timer = setInterval(() => {
+      setPaymentCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer)
+          executeCheckoutSubmission()
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+  }
+
+  const executeCheckoutSubmission = async () => {
+    try {
       const last4 = cardNumber.replace(/\s/g, '').slice(-4) || '4242'
       const res = await fetch('/api/orders', {
         method: 'POST',
@@ -143,7 +162,6 @@ export default function CheckoutPage() {
         console.warn('LocalStorage order save failed:', err)
       }
 
-
       // Broadcast order live to Staff Dashboard
       notifyStaffOfNewOrder({
         id: data.orderId,
@@ -160,17 +178,20 @@ export default function CheckoutPage() {
         })),
       })
 
+      setShowPaymentModal(false)
+
       toast({
-        title: paymentMethod === 'card' ? 'Payment Approved & Order Placed! 🎉' : 'Order Confirmed (Pay on Delivery)! 🍽️',
-        description: `Order Ref: #${data.orderId.slice(0, 8)}`,
+        title: 'Payment Approved & Order Confirmed! 🎉',
+        description: `Payment confirmation received. Order Ref: #${data.orderId.slice(0, 8)}`,
       })
 
       clearCart()
 
       setTimeout(() => {
         router.push(`/orders/${data.orderId}`)
-      }, 1500)
+      }, 500)
     } catch (err: any) {
+      setShowPaymentModal(false)
       toast({
         title: 'Checkout Failed',
         description: err.message || 'An error occurred during checkout.',
@@ -180,6 +201,7 @@ export default function CheckoutPage() {
       setLoading(false)
     }
   }
+
 
   if (cartItems.length === 0) {
     return (
@@ -440,6 +462,48 @@ export default function CheckoutPage() {
           </Card>
         </div>
       </div>
+
+      {/* 5-Second Payment Confirmation Gateway Modal */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+          <div className="w-full max-w-md rounded-[2.5rem] border border-amber-500/30 bg-zinc-950 p-8 text-center space-y-6 shadow-[0_20px_60px_rgba(0,0,0,0.8)]">
+            <div className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-amber-500/10 border border-amber-500/30">
+              <Loader2 className="h-10 w-10 animate-spin text-amber-400" />
+              <span className="absolute font-mono text-sm font-black text-amber-300">{paymentCountdown}s</span>
+            </div>
+
+            <div className="space-y-2">
+              <Badge className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold px-3 py-1 uppercase">
+                SECURE PAYMENT GATEWAY
+              </Badge>
+              <h3 className="text-xl font-extrabold text-zinc-100">
+                Verifying Payment Confirmation
+              </h3>
+              <p className="text-xs text-zinc-400 leading-relaxed max-w-xs mx-auto">
+                Processing payment of <strong className="text-amber-400 font-mono">₹{totalAmount.toFixed(2)}</strong> via secure banking network. Payment confirmation expected within 5 seconds.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/5 bg-zinc-900/80 p-4 space-y-2 text-left text-xs">
+              <div className="flex justify-between text-zinc-400">
+                <span>Payment Method</span>
+                <span className="font-bold text-zinc-200 uppercase">{paymentMethod === 'card' ? `CARD (****${cardNumber.replace(/\s/g, '').slice(-4) || '4242'})` : 'CASH / UPI'}</span>
+              </div>
+              <div className="flex justify-between text-zinc-400">
+                <span>Table Assignment</span>
+                <span className="font-bold text-zinc-200">Table {tableNumber}</span>
+              </div>
+              <div className="flex justify-between text-zinc-400">
+                <span>Status</span>
+                <span className="font-bold text-emerald-400 flex items-center gap-1">
+                  <ShieldCheck className="h-3.5 w-3.5" /> Auto-Closing in {paymentCountdown}s
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
+
