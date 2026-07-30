@@ -1,15 +1,63 @@
-'use client'
-
-import React from 'react'
+import React, { useState } from 'react'
 import { ManagerHeader } from '@/components/manager/ManagerHeader'
 import { useManagerStore } from '@/lib/managerStore'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Users, ShieldCheck, UserPlus, Lock, CheckCircle2, XCircle } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { useToast } from '@/hooks/use-toast'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Users, ShieldCheck, UserPlus, Lock, CheckCircle2, XCircle, Loader2 } from 'lucide-react'
 
 export default function UserManagementPage() {
+  const { toast } = useToast()
   const { users, toggleUserStatus, customers, toggleBlacklistCustomer } = useManagerStore()
+  
+  const [userList, setUserList] = useState(users)
+  const [showProvisionModal, setShowProvisionModal] = useState(false)
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [role, setRole] = useState<'chef' | 'waiter' | 'cashier' | 'delivery' | 'manager'>('chef')
+  const [branch, setBranch] = useState('Luft Main Dining (Bandra)')
+  const [submitting, setSubmitting] = useState(false)
+
+  const handleProvisionUser = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!name.trim() || !email.trim()) return
+
+    setSubmitting(true)
+    setTimeout(() => {
+      const newUser = {
+        id: `u-${Date.now()}`,
+        name: name.trim(),
+        email: email.trim(),
+        role,
+        branch,
+        status: 'active' as const,
+        createdAt: new Date().toISOString().split('T')[0],
+      }
+
+      setUserList((prev) => [newUser, ...prev])
+
+      toast({
+        title: 'Staff Provisioned 🎉',
+        description: `New staff account for ${name} (${role.toUpperCase()}) has been created.`,
+      })
+
+      setName('')
+      setEmail('')
+      setShowProvisionModal(false)
+      setSubmitting(false)
+    }, 400)
+  }
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 pb-16">
@@ -21,7 +69,11 @@ export default function UserManagementPage() {
               Manage permissions, activate/deactivate staff accounts, and view user audit logs.
             </p>
           </div>
-          <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold text-xs rounded-xl">
+          <Button
+            size="sm"
+            onClick={() => setShowProvisionModal(true)}
+            className="bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold text-xs rounded-xl"
+          >
             <UserPlus className="mr-1.5 h-4 w-4" /> Provision New Staff User
           </Button>
         </div>
@@ -29,13 +81,13 @@ export default function UserManagementPage() {
         <Card className="border border-zinc-800 bg-zinc-900/80 rounded-3xl overflow-hidden">
           <CardHeader className="p-6 pb-4 border-b border-zinc-800">
             <CardTitle className="text-base font-bold text-zinc-100 flex items-center justify-between">
-              <span>System User Roster ({users.length} Registered Accounts)</span>
+              <span>System User Roster ({userList.length} Registered Accounts)</span>
               <Badge className="bg-purple-500/20 text-purple-300 text-xs">Role-Based Security</Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <div className="divide-y divide-zinc-800/80">
-              {users.map((user) => (
+              {userList.map((user) => (
                 <div key={user.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 hover:bg-zinc-900/40 transition-colors gap-4">
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-zinc-800 font-bold text-amber-400 text-sm">
@@ -147,6 +199,68 @@ export default function UserManagementPage() {
           </CardContent>
         </Card>
       </main>
+
+      <Dialog open={showProvisionModal} onOpenChange={setShowProvisionModal}>
+        <DialogContent className="bg-zinc-950 border-zinc-800 text-zinc-100 sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold flex items-center gap-2 text-zinc-100">
+              <UserPlus className="h-5 w-5 text-amber-400" /> Provision New Staff Account
+            </DialogTitle>
+            <DialogDescription className="text-xs text-zinc-400">
+              Create credentials & grant role-based permissions for new restaurant personnel.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleProvisionUser} className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-zinc-300">Staff Full Name</Label>
+              <Input
+                placeholder="e.g. Rahul Sharma"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="bg-zinc-900 border-zinc-800 text-xs text-zinc-100"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-zinc-300">Work Email Address</Label>
+              <Input
+                type="email"
+                placeholder="rahul.sharma@platr.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="bg-zinc-900 border-zinc-800 text-xs text-zinc-100"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-zinc-300">Role & Permission Tier</Label>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value as any)}
+                className="w-full rounded-xl border border-zinc-800 bg-zinc-900 p-2.5 text-xs text-zinc-100 focus:border-amber-500 focus:outline-none"
+              >
+                <option value="chef">Chef (Kitchen KDS & Stock)</option>
+                <option value="waiter">Waiter (Floor & Tables)</option>
+                <option value="cashier">Cashier (POS & Receipts)</option>
+                <option value="delivery">Delivery (Rider Dispatch)</option>
+                <option value="manager">Manager (Full ERP Access)</option>
+              </select>
+            </div>
+
+            <DialogFooter className="pt-2">
+              <Button type="button" variant="outline" onClick={() => setShowProvisionModal(false)} className="border-zinc-800 text-xs text-zinc-400">
+                Cancel
+              </Button>
+              <Button type="submit" disabled={submitting} className="bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs">
+                {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : 'Confirm Provisioning'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

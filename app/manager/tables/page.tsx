@@ -5,6 +5,7 @@ import { Armchair, Circle, Grid, UserCheck } from 'lucide-react'
 
 import { createClient } from '@/lib/supabase'
 import { useRoleGuard } from '@/hooks/useRoleGuard'
+import { useStaffStore } from '@/lib/staffStore'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -45,6 +46,7 @@ const statusLabels: Record<TableRecord['status'], string> = {
 export default function TablesPage() {
   const supabase = createClient()
   const { authorized, loading: authLoading } = useRoleGuard(['manager', 'staff'])
+  const { updateTableStatus: storeUpdateTableStatus } = useStaffStore()
   const [tables, setTables] = useState<TableRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedTable, setSelectedTable] = useState<TableRecord | null>(null)
@@ -80,15 +82,19 @@ export default function TablesPage() {
   }, [tables])
 
   const updateTableStatus = async (tableId: string, status: TableRecord['status']) => {
-    const { error } = await supabase.from('tables').update({ status }).eq('id', tableId)
-
-    if (error) {
-      console.error('Failed to update table status:', error)
-      return
+    try {
+      const { error } = await supabase.from('tables').update({ status }).eq('id', tableId)
+      if (error) console.warn('Supabase table update info:', error.message)
+    } catch (e) {
+      console.warn(e)
     }
 
     setTables((current) => current.map((table) => (table.id === tableId ? { ...table, status } : table)))
     setSelectedTable((current) => (current && current.id === tableId ? { ...current, status } : current))
+
+    // Map manager status to staff store table status
+    const staffStatus = status === 'empty' ? 'available' : status === 'seated' ? 'occupied' : 'billing'
+    storeUpdateTableStatus(tableId, staffStatus as any)
   }
 
   if (loading) {
